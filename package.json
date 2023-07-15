@@ -2,7 +2,7 @@
   "name": "541kate",
   "version": "0.1.0",
   "private": false,
-  "homepage": "https://541kate.com/",
+  "homepage": "https://541kate.com",
   "dependencies": {
     "@headlessui/react": "^1.7.15",
     "@heroicons/react": "^2.0.18",
