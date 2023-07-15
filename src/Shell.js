@@ -3,9 +3,10 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useLocation } from "react-router-dom";
 
 const navigation = [
-  { name: "Quizzes", href: "/quizzes"},
-  { name: "France", href: "/france"},
-  { name: "Review my house", href: "/review"}
+  { name: "Take a quiz", href: "/quizzes"},
+  { name: "Relive France with me", href: "/france"},
+  { name: "Review me", href: "/review"},
+  { name: "Rent a backpacker", href: "/rent-a-backpacker"}
 ];
 
 const Shell = ({ children }) => {
@@ -18,14 +19,6 @@ const Shell = ({ children }) => {
 
   return (
     <>
-      {/*
-            This example requires updating your template:
-    
-            ```
-            <html class="h-full">
-            <body class="h-full">
-            ```
-          */}
       <div className="min-h-full">
         <Disclosure as="nav" className="border-b border-gray-200 bg-white">
           {({ open }) => (
@@ -33,18 +26,6 @@ const Shell = ({ children }) => {
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 justify-between">
                   <div className="flex">
-                    <div className="flex flex-shrink-0 items-center">
-                      <img
-                        className="block h-8 w-auto lg:hidden"
-                        src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600"
-                        alt="Your Company"
-                      />
-                      <img
-                        className="hidden h-8 w-auto lg:block"
-                        src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600"
-                        alt="Your Company"
-                      />
-                    </div>
                     <div className="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
                       {navigation.map((item) => (
                         <a

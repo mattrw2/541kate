@@ -40,8 +40,8 @@ const Quizzes = () => {
           <a href={quiz.url} target="_blank" rel="noreferrer">
             <div className="relative">
               <img className="w-full" src={quiz.thumbnail} alt={quiz.title} />
-              <div className="absolute top-0 left-0 p-4 text-white">
-                <h3 className="text-xl">{quiz.title}</h3>
+              <div className="absolute top-0 left-0 p-2 text-white bg-indigo-400">
+                <h3 className="text-xl font-extrabold">{quiz.title}</h3>
                 <div>{quiz?.description}</div>
               </div>
             </div>

@@ -1,25 +1,24 @@
 import React from "react";
 
 const videos = [
-  {
-    id: 1,
-    src: "https://www.youtube.com/embed/mKKIpWlvRZs",
-  },
-  {
-    id: 2,
-    src: "https://www.youtube.com/embed/CIinW8nGjF0",
-  },
+"https://www.youtube.com/embed/mKKIpWlvRZs",
+"https://www.youtube.com/embed/CIinW8nGjF0",
+"https://www.youtube.com/embed/zPvq4LGLNss",
+"https://www.youtube.com/embed/AMo0MrGpad4",
+"https://www.youtube.com/embed/YZpxSv4asGw",
+"https://www.youtube.com/embed/tLIK4LPHLr0",
+"https://www.youtube.com/embed/6YVlm25-ylw"
 ];
 
 const France = () => {
   return (
     <div className="flex flex-col gap-2">
       {videos.map((video) => (
-        <div key={video.id}>
+        <div key={video}>
           <iframe
             className="w-full md:w-[560px]"
             height={315}
-            src={video.src}
+            src={video}
             title="YouTube video player"
             frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
