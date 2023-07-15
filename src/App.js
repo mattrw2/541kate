@@ -10,10 +10,10 @@ const App = () => (
   <Router>
     <Shell>
       <Routes>
-        <Route exact path="/" element={<Quizzes />} />
-        <Route exact path="/quizzes" element={<Quizzes />} />
-        <Route exact path="/france" element={<France />} />
-        <Route exact path="/review" element={<Review />} />
+        <Route exact path="/541kate" element={<Quizzes />} />
+        <Route exact path="/541kate/quizzes" element={<Quizzes />} />
+        <Route exact path="/541kate/france" element={<France />} />
+        <Route exact path="/541kate/review" element={<Review />} />
       </Routes>
     </Shell>
   </Router>

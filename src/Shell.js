@@ -3,9 +3,9 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useLocation } from "react-router-dom";
 
 const navigation = [
-  { name: "Quizzes", href: "/quizzes"},
-  { name: "France", href: "/france"},
-  { name: "Review my house", href: "/review"}
+  { name: "Quizzes", href: "/541kate/quizzes"},
+  { name: "France", href: "/541kate/france"},
+  { name: "Review my house", href: "/541kate/review"}
 ];
 
 const Shell = ({ children }) => {
@@ -15,6 +15,7 @@ const Shell = ({ children }) => {
 
   const location = useLocation();
   const currentPath = location.pathname;
+
 
   return (
     <>
