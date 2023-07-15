@@ -26,6 +26,12 @@ const Shell = ({ children }) => {
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 justify-between">
                   <div className="flex">
+                  <div className="flex flex-shrink-0 items-center text-indigo-400 font-bold">
+
+                    541Kate.com
+
+
+                    </div>
                     <div className="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
                       {navigation.map((item) => (
                         <a
@@ -91,11 +97,11 @@ const Shell = ({ children }) => {
         </Disclosure>
 
         <div className="py-10">
-          {/* <header>
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                  <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900"></h1>
-                </div>
-              </header> */}
+        {/* <header>
+              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900"> {getCurrentPageTitle()}</h1>
+              </div>
+            </header> */}
           <main>
             <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">{children}</div>
           </main>
