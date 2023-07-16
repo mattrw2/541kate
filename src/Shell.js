@@ -1,12 +1,18 @@
 import { Disclosure } from "@headlessui/react";
+import React, { useEffect, useState } from "react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const navigation = [
-  { name: "Take a quiz", href: "/quizzes"},
-  { name: "Relive France with me", href: "/france"},
-  { name: "Review me", href: "/review"},
-  { name: "Rent a backpacker", href: "/rent-a-backpacker"}
+  { name: "Take a quiz", href: "/quizzes", pageName: "Quizzes" },
+  { name: "Leave a review", href: "/review", pageName: "Reviews" },
+  { name: "Relive my France trip", href: "/france", pageName: "France" },
+  {
+    name: "Rent a backpacker",
+    href: "/rent-a-backpacker",
+    pageName: "Rent a backpacker",
+  },
 ];
 
 const Shell = ({ children }) => {
@@ -14,8 +20,20 @@ const Shell = ({ children }) => {
     return classes.filter(Boolean).join(" ");
   }
 
+  const [page, setPage] = useState(null);
+
   const location = useLocation();
   const currentPath = location.pathname;
+
+  useEffect(() => {
+    if (currentPath === "/") {
+      setPage("Quizzes");
+      return;
+    }
+
+    const page = navigation.find((page) => page.href === currentPath);
+    setPage(page.pageName);
+  }, [currentPath]);
 
   return (
     <>
@@ -26,17 +44,14 @@ const Shell = ({ children }) => {
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 justify-between">
                   <div className="flex">
-                  <div className="flex flex-shrink-0 items-center text-indigo-400 font-bold">
-
-                    541Kate.com
-
-
+                    <div className="flex flex-shrink-0 items-center text-indigo-400 font-bold">
+                      <Link to="/"> 541Kate.com</Link>
                     </div>
                     <div className="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
                       {navigation.map((item) => (
-                        <a
+                        <Link
                           key={item.name}
-                          href={item.href}
+                          to={item.href}
                           className={classNames(
                             item.href === currentPath
                               ? "border-indigo-500 text-gray-900"
@@ -48,7 +63,7 @@ const Shell = ({ children }) => {
                           }
                         >
                           {item.name}
-                        </a>
+                        </Link>
                       ))}
                     </div>
                   </div>
@@ -96,14 +111,21 @@ const Shell = ({ children }) => {
           )}
         </Disclosure>
 
-        <div className="py-10">
-        {/* <header>
+        <div className="py-5">
+          {page && (
+            <header>
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900"> {getCurrentPageTitle()}</h1>
+                <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">
+                  {" "}
+                  {page}
+                </h1>
               </div>
-            </header> */}
+            </header>
+          )}
           <main>
-            <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">{children}</div>
+            <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 py-5">
+              {children}
+            </div>
           </main>
         </div>
       </div>

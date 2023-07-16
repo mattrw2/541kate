@@ -26,7 +26,7 @@ const quizData = [
   {
     url: "https://www.playbuzz.com/katesf13/hi-im-kate",
     title: "Hi, I'm Kate",
-    description: "Are you in fact, Kate",
+    description: "Are you in fact, Kate?",
     thumbnail:
       "https://img.playbuzz.com/image/upload/ar_1.5,c_pad,f_jpg,b_auto/q_auto:good,f_auto,fl_lossy,w_640,c_limit,dpr_2/cdn/115ed784-0822-4bda-8b34-6ef040f7b078/3f402775-5704-4a83-84eb-d73137082249_560_420.jpg",
   },
@@ -40,7 +40,7 @@ const Quizzes = () => {
           <a href={quiz.url} target="_blank" rel="noreferrer">
             <div className="relative">
               <img className="w-full" src={quiz.thumbnail} alt={quiz.title} />
-              <div className="absolute top-0 left-0 p-2 text-white bg-indigo-400">
+              <div className="absolute top-0 left-0 p-2 text-white bg-indigo-400 bg-opacity-70">
                 <h3 className="text-xl font-extrabold">{quiz.title}</h3>
                 <div>{quiz?.description}</div>
               </div>

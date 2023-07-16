@@ -1,11 +1,10 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Shell from "./Shell";
-import Quizzes from "./Quizzes";
-import France from "./France";
-import Review from "./Review";
-import RentABackpacker from "./RentABackpacker";
-
+import Quizzes from "./pages/Quizzes";
+import France from "./pages/France";
+import Review from "./pages/Review";
+import RentABackpacker from "./pages/RentABackpacker";
 
 const App = () => (
   <Router>
