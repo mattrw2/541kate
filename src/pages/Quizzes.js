@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 
 const quizData = [
   {
@@ -33,17 +33,35 @@ const quizData = [
 ];
 
 const Quizzes = () => {
+  const [allImagesLoaded, setAllImagesLoaded] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState(0);
+
+  useEffect(() => {
+    if (imagesLoaded === quizData.length) {
+      setAllImagesLoaded(true);
+    }
+  }, [imagesLoaded]);
+
   return (
     <div className="flex flex-wrap gap-2">
-      {quizData.map((quiz) => (
+      {quizData.map((quiz, index) => (
         <div key={quiz.url}>
           <a href={quiz.url} target="_blank" rel="noreferrer">
             <div className="relative">
-              <img className="w-full" src={quiz.thumbnail} alt={quiz.title} />
-              <div className="absolute top-0 left-0 p-2 text-white bg-indigo-400 bg-opacity-70">
-                <h3 className="text-xl font-extrabold">{quiz.title}</h3>
-                <div>{quiz?.description}</div>
-              </div>
+              <img
+                className="w-full"
+                src={quiz.thumbnail}
+                alt={quiz.title}
+                onLoad={() => {
+                  setImagesLoaded((prev) => prev + 1);
+                }}
+              />
+              {allImagesLoaded && (
+                <div className="absolute top-0 left-0 p-2 text-white bg-indigo-400 bg-opacity-70">
+                  <h3 className="text-xl font-extrabold">{quiz.title}</h3>
+                  <div>{quiz?.description}</div>
+                </div>
+              )}
             </div>
           </a>
         </div>

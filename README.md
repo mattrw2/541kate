@@ -29,7 +29,7 @@ See the pages directory for page specific changes. I tried to put most of the co
 
 ### Deploying new changes
 
-Simply push your changes to the master branch, and they will auto-deploy using AWS Amplify.
+Push your changes to the master branch, and they will auto-deploy using AWS Amplify.
 
 ### Learn More
 
