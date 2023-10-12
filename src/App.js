@@ -5,12 +5,13 @@ import Quizzes from "./pages/Quizzes";
 import France from "./pages/France";
 import Review from "./pages/Review";
 import RentABackpacker from "./pages/RentABackpacker";
+import Home from "./pages/Home";
 
 const App = () => (
   <Router>
     <Shell>
       <Routes>
-        <Route exact path="/" element={<Quizzes />} />
+        <Route exact path="/" element={<Home />} />
         <Route exact path="/quizzes" element={<Quizzes />} />
         <Route exact path="/france" element={<France />} />
         <Route exact path="/review" element={<Review />} />

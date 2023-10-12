@@ -27,7 +27,7 @@ const Shell = ({ children }) => {
 
   useEffect(() => {
     if (currentPath === "/") {
-      setPage("Quizzes");
+      setPage("");
       return;
     }
 
