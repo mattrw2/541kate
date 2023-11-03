@@ -32,7 +32,11 @@ const Shell = ({ children }) => {
     }
 
     const page = navigation.find((page) => page.href === currentPath);
-    setPage(page.pageName);
+
+    if (page) {
+
+      setPage(page.pageName);
+    }
   }, [currentPath]);
 
   return (

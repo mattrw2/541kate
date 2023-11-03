@@ -1,6 +1,7 @@
 import React from 'react'
-//use require to import kate
-const kate = require('../kate.jpeg')
+// import kate image
+import kate from '../kate.png'
+
 
 
 const Home = () => {
