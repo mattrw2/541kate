@@ -84,6 +84,10 @@ const addUser = async (username) => {
     body: JSON.stringify({ username: username }),
   })
   const data = await response.json()
+  //reload the users
+  loadUserOptions()
+  // Hide the data-fetching div
+  document.getElementById("data-fetching").style.display = "none";
   return data
 }
 const addUserButton = document.getElementById("add-user-button")
@@ -142,7 +146,7 @@ const addActivity = async (user_id, duration, date, memo) => {
   const data = await response.json()
   return data
 }
-
+//What happens when you click the save button
 const SaveButton = document.getElementById("save-button")
 SaveButton.addEventListener("click", async (e) => {
   const user_id = document.getElementById("select-name").value
@@ -159,6 +163,8 @@ SaveButton.addEventListener("click", async (e) => {
 
   // Hide the form
   document.getElementById("exercise-input").style.display = "none";})
+
+  //TO ADD: have the chart refresh
 
 //this expands the add exercise form
 const getAddButton = document.getElementById("add-button");
