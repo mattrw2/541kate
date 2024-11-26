@@ -8,6 +8,11 @@ let db;
 // Set up our database
 const existingDatabase = fs.existsSync(databaseFile);
 
+// TEMPORARY: remove the database file to start fresh
+if (existingDatabase) {
+  fs.unlinkSync(databaseFile);
+}
+
 const initial_users = [
     { username: "Corbin" },
     { username: "Kate" },
@@ -31,8 +36,7 @@ dbWrapper
   .then(async (dBase) => {
     db = dBase;
     try {
-      if (!existingDatabase) {
-        // Database doesn't exist yet -- let's create it!
+      // if (!existingDatabase) {
         await db.run("PRAGMA foreign_keys = ON");
         await db.run(createUsersTableSQL);
         await db.run(createActivityTableSQL);
@@ -47,26 +51,27 @@ dbWrapper
             [activity.user_id, activity.duration, activity.memo, activity.date]
           );
         }
-      } else {
-        // Avoids a rare bug where the database gets created, but the tables don't
-        const tableNames = await db.all(
-          "SELECT name FROM sqlite_master WHERE type='table'"
-        );
-        const tableNamesToCreationSQL = {
-          users: createUsersTableSQL,
-        activities: createActivityTableSQL,
-        };
-        for (const [tableName, creationSQL] of Object.entries(
-          tableNamesToCreationSQL
-        )) {
-          if (!tableNames.some((table) => table.name === tableName)) {
-            console.log(`Creating ${tableName} table`);
-            await db.run(creationSQL);
-          }
-        }
-        console.log("Database is up and running!");
-        sqlite3.verbose();
-      }
+      // } else {
+
+      //   // Avoids a rare bug where the database gets created, but the tables don't
+      //   const tableNames = await db.all(
+      //     "SELECT name FROM sqlite_master WHERE type='table'"
+      //   );
+      //   const tableNamesToCreationSQL = {
+      //     users: createUsersTableSQL,
+      //   activities: createActivityTableSQL,
+      //   };
+      //   for (const [tableName, creationSQL] of Object.entries(
+      //     tableNamesToCreationSQL
+      //   )) {
+      //     if (!tableNames.some((table) => table.name === tableName)) {
+      //       console.log(`Creating ${tableName} table`);
+      //       await db.run(creationSQL);
+      //     }
+      //   }
+      //   console.log("Database is up and running!");
+      //   sqlite3.verbose();
+      // }
     } catch (dbError) {
       console.error(dbError);
     }
