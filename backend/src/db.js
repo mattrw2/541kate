@@ -9,20 +9,20 @@ let db;
 const existingDatabase = fs.existsSync(databaseFile);
 
 const initial_users = [
-    { id: "1", username: "Corbin" },
-    { id: "2", username: "Kate" },
-    { id: "3", username: "Matt" },
+    { username: "Corbin" },
+    { username: "Kate" },
+    { username: "Matt" },
     ];
 
 const initial_activities = [
-    { id: "1", user_id: "1", duration: 30, memo: "Ran around the block", date: "2021-01-01" },
-    { id: "2", user_id: "1", duration: 60, memo: "Lifted weights", date: "2021-01-02" },
+    { user_id: "1", duration: 30, memo: "Ran around the block", date: "2021-01-01" },
+    { user_id: "1", duration: 60, memo: "Lifted weights", date: "2021-01-02" },
 ];
 
 const createUsersTableSQL =
-  "CREATE TABLE users (id TEXT PRIMARY KEY, username TEXT NOT NULL)";
+  "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE)";
 const createActivityTableSQL =
-  "CREATE TABLE activities (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, " +
+  "CREATE TABLE activities (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, " +
   "duration INTEGER NOT NULL, memo TEXT, " +
   "date TEXT NOT NULL, FOREIGN KEY(user_id) REFERENCES users(id))";
   "FOREIGN KEY(user_id) REFERENCES users(id))";
@@ -37,15 +37,14 @@ dbWrapper
         await db.run(createUsersTableSQL);
         await db.run(createActivityTableSQL);
         for (const user of initial_users) {
-          await db.run("INSERT INTO users (id, username) VALUES (?, ?)", [
-            user.id,
+          await db.run("INSERT INTO users (username) VALUES (?)", [
             user.username,
           ]);
         }
         for (const activity of initial_activities) {
           await db.run(
-            "INSERT INTO activities (id, user_id, duration, memo, date) VALUES (?, ?, ?, ?, ?)",
-            [activity.id, activity.user_id, activity.duration, activity.memo, activity.date]
+            "INSERT INTO activities (user_id, duration, memo, date) VALUES (?, ?, ?, ?)",
+            [activity.user_id, activity.duration, activity.memo, activity.date]
           );
         }
       } else {
@@ -77,6 +76,12 @@ const getUsers = async () => {
   return await db.all("SELECT * FROM users");
 };
 
+const addUser = async (username) => {
+  const result =  await db.run("INSERT INTO users (username) VALUES (?)", [username]);
+  const newUser = await db.get("SELECT * FROM users WHERE id = ?", [result.lastID]);
+  return newUser;
+};
+
 const getActivities = async () => {
     return await db.all("SELECT * FROM activities");
 };
@@ -84,4 +89,5 @@ const getActivities = async () => {
 module.exports = {
     getUsers,
     getActivities,
+    addUser,
 };

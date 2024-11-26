@@ -31,6 +31,19 @@ See the pages directory for page specific changes. I tried to put most of the co
 
 Push your changes to the master branch, and they will auto-deploy using AWS Amplify.
 
+
+### Running Backend Server
+
+* Navigate to the backend directory
+    ```
+    cd backend
+* Install dependencies
+    ```
+    npm install
+* Run the server
+    ```
+    npm start
+
 ### Learn More
 
 - To learn React, check out the [React documentation](https://reactjs.org/).

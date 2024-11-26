@@ -13,8 +13,20 @@
     <title>541kate</title>
   </head>
   <body class="h-full">
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root">HELLO YOU</div>
-    <script src="chart.js"></script>
+    <div id="root"></div>
+    <div id="data-fetching">
+      <h1>Users</h1>
+      <form id="add-user-form">
+        <label for="username-input">Username</label>
+        <input type="text" id="username-input" />
+        <button type="submit" id="add-user-button">Add User</button>
+      </form>
+
+
+      <button id="get-data-button">Fetch Users</button>
+      <ul id="user-list"></ul>
+    </div>
+
+    <script src="./chart.js"></script>
   </body>
 </html>

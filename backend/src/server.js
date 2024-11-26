@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const cors = require('cors')
 
 const APP_PORT = process.env.APP_PORT || 8000;
 
@@ -10,6 +11,7 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.static("./public"));
+app.use(cors())
 
 const server = app.listen(APP_PORT, function () {
   console.log(`Server is up and running at http://localhost:${APP_PORT}/`);
