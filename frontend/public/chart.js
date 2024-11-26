@@ -1,7 +1,5 @@
-//get names later
 
-// Use the names from the select element as labels
-
+//This is the data for the bar chart
 const labels = ["Corban", "Popster", "Kate", "Shannon", "James", "Santa", "Rudolph", "Frosty", "Gregg", "Buddy", "Jovie", "Walter", "Emily"];
 const data = {
     labels: labels,
@@ -88,27 +86,32 @@ const addUser = async (username) => {
   const data = await response.json()
   return data
 }
-
-const getUsersButton = document.getElementById("get-data-button")
 const addUserButton = document.getElementById("add-user-button")
 
-
-getUsersButton.addEventListener("click", async () => {
+//this loads all the users
+const loadUserOptions = async () => {
   const data = await getUsers()
-  const list = document.getElementById("user-list")
+  const selectElement = document.getElementById("select-name")
 
   // clear any existing list items
-  list.innerHTML = ""
+  selectElement.innerHTML = ""
+
+  // Create and append the default empty option
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "Select an option";
+  selectElement.appendChild(defaultOption);
 
   // add new list items to the page
   data.forEach((element) => {
-    const listItem = document.createElement("li")
-    listItem.id = element.id
-    listItem.textContent = element.username
-    list.appendChild(listItem)
+    const optionItem = document.createElement("option")
+    optionItem.id = element.id
+    optionItem.textContent = element.username
+    selectElement.appendChild(optionItem)
   })
-})
-
+}
+//call the function
+document.onload = loadUserOptions()
 
 addUserButton.addEventListener("click", async (e) => {
   e.preventDefault()
@@ -139,6 +142,7 @@ const addActivity = async (user_id, duration, date, memo) => {
   return data
 }
 
+//this expands the add exercise form
 const getAddButton = document.getElementById("add-button");
 getAddButton.addEventListener("click", () => {
   const form = document.getElementById("exercise-input");
@@ -149,7 +153,7 @@ getAddButton.addEventListener("click", () => {
     form.style.display = "block";
   }
 });
-
+// This expands the add user feature
 document.getElementById("expand-user-button").addEventListener("click", () => {
     const dataFetching = document.getElementById("data-fetching");
     if (dataFetching.style.display === "block") {
