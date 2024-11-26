@@ -109,6 +109,7 @@ getUsersButton.addEventListener("click", async () => {
   })
 })
 
+
 addUserButton.addEventListener("click", async (e) => {
   e.preventDefault()
   const username = document.getElementById("username-input").value
@@ -137,3 +138,25 @@ const addActivity = async (user_id, duration, date, memo) => {
   const data = await response.json()
   return data
 }
+
+const getAddButton = document.getElementById("add-button");
+getAddButton.addEventListener("click", () => {
+  const form = document.getElementById("exercise-input");
+
+  if (form.style.display === "block") {
+    form.style.display = "none";
+  } else {
+    form.style.display = "block";
+  }
+});
+
+document.getElementById("expand-user-button").addEventListener("click", () => {
+    const dataFetching = document.getElementById("data-fetching");
+    if (dataFetching.style.display === "block") {
+      dataFetching.style.display = "none";
+    } else {
+      dataFetching.style.display = "block";
+    }
+  });
+
+ 
