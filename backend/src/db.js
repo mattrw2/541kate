@@ -15,17 +15,16 @@ const initial_users = [
     ];
 
 const initial_activities = [
-    { user_id: "1", duration: 30, memo: "Ran around the block", date: "2021-01-01" },
-    { user_id: "1", duration: 60, memo: "Lifted weights", date: "2021-01-02" },
+    { user_id: 1, duration: 30, memo: "Ran around the block", date: "2021-01-01" },
+    { user_id: 1, duration: 60, memo: "Lifted weights", date: "2021-01-02" },
 ];
 
 const createUsersTableSQL =
   "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE)";
 const createActivityTableSQL =
-  "CREATE TABLE activities (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, " +
+  "CREATE TABLE activities (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, " +
   "duration INTEGER NOT NULL, memo TEXT, " +
   "date TEXT NOT NULL, FOREIGN KEY(user_id) REFERENCES users(id))";
-  "FOREIGN KEY(user_id) REFERENCES users(id))";
 
 dbWrapper
   .open({ filename: databaseFile, driver: sqlite3.Database })
@@ -34,6 +33,7 @@ dbWrapper
     try {
       if (!existingDatabase) {
         // Database doesn't exist yet -- let's create it!
+        await db.run("PRAGMA foreign_keys = ON");
         await db.run(createUsersTableSQL);
         await db.run(createActivityTableSQL);
         for (const user of initial_users) {

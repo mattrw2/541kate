@@ -109,7 +109,7 @@ const loadUserOptions = async () => {
   // add new list items to the page
   data.forEach((element) => {
     const optionItem = document.createElement("option")
-    optionItem.id = element.id
+    optionItem.value = element.id
     optionItem.textContent = element.username
     selectElement.appendChild(optionItem)
   })
