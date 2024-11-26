@@ -82,12 +82,24 @@ const addUser = async (username) => {
   return newUser;
 };
 
-const getActivities = async () => {
+const addActivity = async (user_id, duration, date, memo="") => {
+    const result = await db.run("INSERT INTO activities (user_id, duration, memo, date) VALUES (?, ?, ?, ?)", [user_id, duration, memo, date]);
+    const newActivity = await db.get("SELECT * FROM activities WHERE id = ?", [result.lastID]);
+    return newActivity;
+}
+
+const listActivities = async () => {
     return await db.all("SELECT * FROM activities");
+};
+
+const listUsersByDuration = async () => {
+    return await db.all("SELECT users.username, SUM(activities.duration) as total_duration FROM users JOIN activities ON users.id = activities.user_id GROUP BY users.id ORDER BY users.username DESC");
 };
 
 module.exports = {
     getUsers,
-    getActivities,
+    listActivities,
     addUser,
+    listUsersByDuration,
+    addActivity,
 };

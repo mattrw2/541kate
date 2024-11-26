@@ -117,3 +117,23 @@ addUserButton.addEventListener("click", async (e) => {
 })
 
 
+// eslint-disable-next-line no-unused-vars
+const getUsersByDuration = async () => {
+  const response = await fetch("https://five41kate.onrender.com/users/duration")
+  const data = await response.json()
+  return data
+}
+
+// eslint-disable-next-line no-unused-vars
+const addActivity = async (user_id, duration, date, memo) => {
+  const response = await fetch("https://five41kate.onrender.com/activities",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ user_id, duration, date, memo }),
+    })
+  const data = await response.json()
+  return data
+}
