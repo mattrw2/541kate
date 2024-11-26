@@ -152,6 +152,15 @@ const addActivity = async (user_id, duration, date, memo) => {
   const data = await response.json()
   return data
 }
+
+//validate the form
+const validateForm = (user_id, duration, date, memo) => {
+  if (user_id !== "Select an option" && user_id !== "" && duration !== null && duration >= 0 && date !== "" && memo !== "") {
+    return
+  } else {
+      alert("Please fill out all fields correctly.");
+      return;}}
+
 //What happens when you click the save button
 const SaveButton = document.getElementById("save-button")
 SaveButton.addEventListener("click", async (e) => {
@@ -160,7 +169,7 @@ SaveButton.addEventListener("click", async (e) => {
   const date = document.getElementById("select-date").value
   const memo = document.getElementById("write-description").value
 
-
+  validateForm(user_id, duration, date, memo)
   await addActivity(user_id, duration, date, memo)
 
   //load the list data
@@ -176,19 +185,22 @@ SaveButton.addEventListener("click", async (e) => {
   document.getElementById("exercise-input").style.display = "none";})
 
 
+
 //render the list of activities
 const renderListActivities = async () => {
   const activityList = document.getElementById("activity-list")
+  activityList.innerHTML = ""
   const activities = await getActivities()
 
   activities.forEach((activity) => {
     const activityItem = document.createElement("li")
-    activityItem.className = "font-extralight grid justify-items-start grid-cols-[auto,1fr,auto] px-2 px-y gap-2 rounded-md border-x border-t last:border-b border-x-yellow-600 border-t-yellow-600 last:border-b-yellow-600 items-center mx-4 max-w-[500px]"
+    activityItem.className = "font-extralight text-sm grid justify-items-start grid-cols-[auto,1fr,auto] px-2 px-y gap-2 rounded-md border-x border-t last:border-b border-x-yellow-600 border-t-yellow-600 last:border-b-yellow-600 items-center mx-4 max-w-[500px]"
     const dateContainer = document.createElement("div")
     dateContainer.className = "flex flex-col items-center w-12"
     const dateContainerSpan = document.createElement("span")
-    dateContainerSpan.textContent = activity.date
-    dateContainer.appendChild(dateContainerSpan)
+    const date = new Date(activity.date);
+    const options = { month: 'short', day: 'numeric' };
+    dateContainerSpan.textContent = date.toLocaleDateString('en-US', options);    dateContainer.appendChild(dateContainerSpan)
     activityItem.appendChild(dateContainer)
 
     const descriptionContainer = document.createElement("div")
