@@ -47,7 +47,34 @@
       </li>
   </div>
     
-    
+  <select required id="select-name" name="name" placeholder="Name" class="w-[calc(100%-4rem)] max-w-[500px] p-2 ml-4 mr-2 border rounded"></select>
+  </select>
+  <button type="submit" class="font-thin text-2xl" id="add-user-button">+</button>
+  <form id="add-user-form">
+    <input type="text" id="username-input" placeholder="Name" class="pl-2 pr-2 border m-4 mr-2 border-yellow-800 rounded placeholder-gray-400" style="width: auto; max-width: 450px;" />
+    <button type="submit" class="font-thin" id="add-user-button">Submit</button>
+  </form>
+  <input id="select-date" name="date" type="date" class="w-30 p-2 mx-4 border mt-1 rounded" min="2024-12-01" max="2024-12-31" /><br />
+  <input required id="select-time" name="time" type="number" placeholder="0" min="0"
+      class="w-12 p-2 ml-4 mr-1 mt-1 border rounded" style="-moz-appearance: textfield;" /> minutes<br />
+  <style>
+      /* Remove arrows in input number for Chrome, Safari, Edge, Opera */
+      input[type=number]::-webkit-outer-spin-button,
+      input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+      }
+
+      /* Remove arrows in input number for Firefox */
+      input[type=number] {
+      -moz-appearance: textfield;
+      }
+  </style>
+  <textarea id="write-description" name="description" placeholder="Description"
+      class="border rounded mx-4 my-1 w-[calc(100%-2rem)] max-w-[300px] pl-1 pt-1"></textarea><br />
+  <button id="save-button" type="submit" class="mx-4 bg-transparent hover:bg-yellow-600 text-yellow-600 font-semibold hover:text-white py-2 px-4 border border-yellow-600 hover:border-transparent rounded">
+      Save
+  </button>
     
     
     
@@ -56,11 +83,10 @@
     
     <div id="root"></div>
     <div id="data-fetching">
-      <h1>Users</h1>
+      <h1>Add User</h1>
       <form id="add-user-form">
-        <label for="username-input">Username</label>
-        <input type="text" id="username-input" />
-        <button type="submit" id="add-user-button">Add User</button>
+        <input type="text" id="username-input" placeholder="Name" class="pl-2 pr-2 border m-4 mr-2 border-yellow-800 rounded placeholder-gray-400" style="width: auto; max-width: 450px;" />
+        <button type="submit" class="font-thin text-2xl" id="add-user-button">+</button>
       </form>
 
 
