@@ -133,6 +133,12 @@ const getUsersByDuration = async () => {
   return data
 }
 
+const getActivities = async () => {
+  const response = await fetch("https://five41kate.onrender.com/activities/list")
+  const data = await response.json()
+  return data
+}
+
 // eslint-disable-next-line no-unused-vars
 const addActivity = async (user_id, duration, date, memo) => {
   const response = await fetch("https://five41kate.onrender.com/activities",
@@ -153,7 +159,12 @@ SaveButton.addEventListener("click", async (e) => {
   const duration = document.getElementById("select-time").value
   const date = document.getElementById("select-date").value
   const memo = document.getElementById("write-description").value
-  addActivity(user_id, duration, date, memo)
+
+
+  await addActivity(user_id, duration, date, memo)
+
+  //load the list data
+  renderListActivities()
 
   // Reset the form fields
   document.getElementById("select-name").value = "";
@@ -164,9 +175,46 @@ SaveButton.addEventListener("click", async (e) => {
   // Hide the form
   document.getElementById("exercise-input").style.display = "none";})
 
-  //TO ADD: have the chart refresh
 
-//this expands the add exercise form
+//render the list of activities
+const renderListActivities = async () => {
+  const activityList = document.getElementById("activity-list")
+  const activities = await getActivities()
+
+  activities.forEach((activity) => {
+    const activityItem = document.createElement("li")
+    activityItem.className = "font-extralight grid justify-items-start grid-cols-[auto,1fr,auto] px-2 px-y gap-2 rounded-md border-x border-t last:border-b border-x-yellow-600 border-t-yellow-600 last:border-b-yellow-600 items-center mx-4 max-w-[500px]"
+    const dateContainer = document.createElement("div")
+    dateContainer.className = "flex flex-col items-center w-12"
+    const dateContainerSpan = document.createElement("span")
+    dateContainerSpan.textContent = activity.date
+    dateContainer.appendChild(dateContainerSpan)
+    activityItem.appendChild(dateContainer)
+
+    const descriptionContainer = document.createElement("div")
+    
+    const descriptionContainerSpan = document.createElement("span")
+    descriptionContainerSpan.className = "text-xs text-yellow-600"
+    descriptionContainerSpan.textContent = activity.memo
+    const descriptionContainerSpan2 = document.createElement("span")
+    descriptionContainerSpan2.className = "flex flex-col text-left w-full"
+    descriptionContainerSpan2.textContent = activity.user_id
+
+    descriptionContainer.appendChild(descriptionContainerSpan2)
+    descriptionContainer.appendChild(descriptionContainerSpan)
+    activityItem.appendChild(descriptionContainer)
+
+    const durationContainer = document.createElement("span")
+    durationContainer.textContent = activity.duration+" min"
+    activityItem.appendChild(durationContainer)
+
+    activityList.appendChild(activityItem)
+  })}
+
+document.onload = renderListActivities()
+
+
+  //this expands the add exercise form
 const getAddButton = document.getElementById("add-button");
 getAddButton.addEventListener("click", () => {
   const form = document.getElementById("exercise-input");
@@ -187,4 +235,10 @@ document.getElementById("expand-user-button").addEventListener("click", () => {
     }
   });
 
- 
+ //to do 
+ /* 
+ - Add in the chart data (what is the structure)
+ - Add in the total minutes (also in the chart--need structure)
+ - Populate the scrolling below (how to get the data)
+ - Sort the data by date
+ - Add filter functionality*/
