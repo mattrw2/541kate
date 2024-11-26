@@ -16,6 +16,10 @@ const App = () => (
         <Route exact path="/france" element={<France />} />
         <Route exact path="/review" element={<Review />} />
         <Route exact path="/rent-a-backpacker" element={<RentABackpacker/>} />
+        <Route path="/chart" component={() => { 
+          window.location.href = "/chart.html"; 
+          return null;
+        }} />
       </Routes>
     </Shell>
   </Router>
