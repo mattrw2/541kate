@@ -110,9 +110,10 @@ const loadUserOptions = async () => {
     selectElement.appendChild(optionItem)
   })
 }
-//call the function
+//load users on select on load
 document.onload = loadUserOptions()
 
+// add new user
 addUserButton.addEventListener("click", async (e) => {
   e.preventDefault()
   const username = document.getElementById("username-input").value
@@ -141,6 +142,14 @@ const addActivity = async (user_id, duration, date, memo) => {
   const data = await response.json()
   return data
 }
+
+const SaveButton = document.getElementById("save-button")
+SaveButton.addEventListener("click", async (e) => {
+  const user_id = document.getElementById("select-name").value
+  const duration = document.getElementById("select-time").value
+  const date = document.getElementById("select-date").value
+  const memo = document.getElementById("write-description").value
+  addActivity(user_id, duration, date, memo)})
 
 //this expands the add exercise form
 const getAddButton = document.getElementById("add-button");

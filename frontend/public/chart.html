@@ -41,7 +41,8 @@
   </div>
   <div style="display: none;" id="exercise-input">
     <form >
-      <select required id="select-name" name="name" placeholder="Name" class="w-[calc(100%-4rem)] max-w-[500px] p-2 ml-4 mr-2 border rounded"></select>
+      <select required id="select-name" name="name" placeholder="Name" class="w-[calc(100%-4rem)] max-w-[500px] p-2 ml-4 mr-2 border rounded font-thin"></select>
+
       </select>
       <button  type="button" class="font-thin text-2xl" id="expand-user-button">+</button>
       <div id="root"></div>
@@ -50,7 +51,6 @@
           <input type="text" id="username-input" placeholder="Name" class="p-2 py-1 font-thin border ml-10 mt-1 rounded placeholder-gray-400" style="width: auto; max-width: 450px;" />
           <button type="submit" class="border-yellow-600 text-yellow-600 hover:bg-yellow-600 hover:text-white font-thin border rounded p-2 py-1" id="add-user-button">Add User</button>
         </form>
-        <button id="get-data-button">Fetch Users</button>
         <ul id="user-list"></ul>
       </div>
       <input id="select-date" name="date" type="date" class="font-thin w-30 mx-4 p-2 border mt-1 rounded" min="2024-12-01" max="2024-12-31" /><br />
