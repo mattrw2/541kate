@@ -149,7 +149,16 @@ SaveButton.addEventListener("click", async (e) => {
   const duration = document.getElementById("select-time").value
   const date = document.getElementById("select-date").value
   const memo = document.getElementById("write-description").value
-  addActivity(user_id, duration, date, memo)})
+  addActivity(user_id, duration, date, memo)
+
+  // Reset the form fields
+  document.getElementById("select-name").value = "";
+  document.getElementById("select-time").value = "";
+  document.getElementById("select-date").value = "";
+  document.getElementById("write-description").value = "";
+
+  // Hide the form
+  document.getElementById("exercise-input").style.display = "none";})
 
 //this expands the add exercise form
 const getAddButton = document.getElementById("add-button");
