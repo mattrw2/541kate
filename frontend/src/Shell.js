@@ -12,7 +12,8 @@ const navigation = [
     name: "Rent a backpacker",
     href: "/rent-a-backpacker",
     pageName: "Rent a backpacker",
-  }
+  },
+  { name: "Sweat-ers", href: "/chart", pageName: "" },
 ];
 
 const Shell = ({ children }) => {
