@@ -9,9 +9,9 @@ let db;
 const existingDatabase = fs.existsSync(databaseFile);
 
 // TEMPORARY: remove the database file to start fresh
-if (existingDatabase) {
-  fs.unlinkSync(databaseFile);
-}
+// if (existingDatabase) {
+//   fs.unlinkSync(databaseFile);
+// }
 
 const initial_users = [
     { username: "Corban" },
