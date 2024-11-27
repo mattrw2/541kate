@@ -9,19 +9,17 @@ let db;
 const existingDatabase = fs.existsSync(databaseFile);
 
 // TEMPORARY: remove the database file to start fresh
-// if (existingDatabase) {
-//   fs.unlinkSync(databaseFile);
-// }
+if (existingDatabase) {
+  fs.unlinkSync(databaseFile);
+}
 
 const initial_users = [
-    { username: "Corbin" },
+    { username: "Corban" },
     { username: "Kate" },
-    { username: "Matt" },
+    { username: "Matte" },
     ];
 
 const initial_activities = [
-    { user_id: 1, duration: 30, memo: "Ran around the block", date: "2021-01-01" },
-    { user_id: 1, duration: 60, memo: "Lifted weights", date: "2021-01-02" },
 ];
 
 const createUsersTableSQL =
@@ -78,7 +76,7 @@ dbWrapper
   });
 
 const getUsers = async () => {
-  return await db.all("SELECT * FROM users");
+  return await db.all("SELECT * FROM users order by username");
 };
 
 const addUser = async (username) => {
@@ -94,7 +92,7 @@ const addActivity = async (user_id, duration, date, memo="") => {
 }
 
 const listActivities = async () => {
-    return await db.all("SELECT a.*, u.username FROM activities a JOIN users u ON a.user_id = u.id");
+    return await db.all("SELECT a.*, u.username FROM activities a JOIN users u ON a.user_id = u.id order by a.date desc");
 };
 
 const listUsersByDuration = async () => {
