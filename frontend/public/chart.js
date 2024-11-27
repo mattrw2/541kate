@@ -103,6 +103,18 @@ chartLabels()
 }
 
 const addUser = async (username) => {
+    // Fetch the list of existing usernames
+    const existingUsersResponse = await fetch("https://five41kate.onrender.com/users");
+    const existingUsers = await existingUsersResponse.json();
+    const existingUsernames = existingUsers.map(user => user.username);
+  
+    // Check if the username is unique
+    if (existingUsernames.includes(username)) {
+      const usernameInput = document.getElementById("username-input");
+      showTooltip("User already exists.", usernameInput);
+      return;
+    }
+  
   const response = await fetch("https://five41kate.onrender.com/users", {
     method: "POST",
     headers: {
@@ -111,8 +123,13 @@ const addUser = async (username) => {
     body: JSON.stringify({ username: username }),
   })
   const data = await response.json()
+  
+  
   //reload the users
-  loadUserOptions()
+  await loadUserOptions()
+  document.getElementById("select-name").value = data.id; // Set the newly added user as the selected option
+
+
   // Hide the data-fetching div
   document.getElementById("data-fetching").style.display = "none";
   return data
