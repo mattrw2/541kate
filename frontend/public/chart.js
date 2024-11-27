@@ -1,74 +1,101 @@
+// eslint-disable-next-line no-unused-vars
+const getUsersByDuration = async () => {
+  const response = await fetch("https://five41kate.onrender.com/users/duration")
+  const data = await response.json()
+  return data
+}
+
+let barChart = null;
 
 //This is the data for the bar chart
-const labels = ["Corban", "Popster", "Kate", "Shannon", "James", "Santa", "Rudolph", "Frosty", "Gregg", "Buddy", "Jovie", "Walter", "Emily"];
-const data = {
-    labels: labels,
-    datasets: [{
-        data: [65, 59, 4, 81, 750, 150, 100, 600, 130, 3, 240, 160, 170],
-        backgroundColor: [
-            'rgba(255, 99, 132, 0.2)',
-            'rgba(255, 159, 64, 0.2)',
-            'rgba(255, 205, 86, 0.2)',
-            'rgba(75, 192, 192, 0.2)',
-            'rgba(54, 162, 235, 0.2)',
-            'rgba(153, 102, 255, 0.2)',
-            'rgba(201, 203, 207, 0.2)'
-        ],
-        borderColor: [
-            'rgb(255, 99, 132)',
-            'rgb(255, 159, 64)',
-            'rgb(255, 205, 86)',
-            'rgb(75, 192, 192)',
-            'rgb(54, 162, 235)',
-            'rgb(153, 102, 255)',
-            'rgb(201, 203, 207)'
-        ],
-        borderWidth: 1
-    }]
+const chartLabels = async () => {
+    // Call the function and await its result
+  const durationArray = await getUsersByDuration();
+
+
+  const labels = durationArray.map(user => user.username);
+  console.log(labels)
+  const data = {
+      labels: labels,
+      datasets: [{
+          data: durationArray.map(user => user.total_duration),
+          backgroundColor: [
+              'rgba(255, 99, 132, 0.2)',
+              'rgba(255, 159, 64, 0.2)',
+              'rgba(255, 205, 86, 0.2)',
+              'rgba(75, 192, 192, 0.2)',
+              'rgba(54, 162, 235, 0.2)',
+              'rgba(153, 102, 255, 0.2)',
+              'rgba(201, 203, 207, 0.2)'
+          ],
+          borderColor: [
+              'rgb(255, 99, 132)',
+              'rgb(255, 159, 64)',
+              'rgb(255, 205, 86)',
+              'rgb(75, 192, 192)',
+              'rgb(54, 162, 235)',
+              'rgb(153, 102, 255)',
+              'rgb(201, 203, 207)'
+          ],
+          borderWidth: 1
+
+      }]
+    
+
+  }
+
+
+
+  const ctx = document.getElementById('bar-chart').getContext('2d');
+
+  if (barChart) {
+      barChart.destroy();
+  }
+  
+  barChart = new Chart(ctx, {
+      type: 'bar',
+      data: data,
+      options: {
+          indexAxis: 'y',
+          scales: {
+              x: {
+                  beginAtZero: true
+              },
+              y: {
+                  beginAtZero: true,
+                  grid: {
+                      display: false // Remove horizontal grid lines
+                  }
+              }
+          },
+          plugins: {
+              legend: {
+                  display: false
+              },
+              annotation: {
+                  annotations: {
+                      line1: {
+                          type: 'line',
+                          scaleID: 'x',
+                          value: 600,
+                          borderColor: 'orange',
+                          borderWidth: 2,
+                          label: {
+                              enabled: true,
+                              content: '600'
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  })
+
 };
 
+chartLabels()  
 // Render the chart
-document.addEventListener('DOMContentLoaded', () => {
-    const ctx = document.getElementById('bar-chart').getContext('2d');
-    const barChart = new Chart(ctx, {
-        type: 'bar',
-        data: data,
-        options: {
-            indexAxis: 'y',
-            scales: {
-                x: {
-                    beginAtZero: true
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        display: false // Remove horizontal grid lines
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                annotation: {
-                    annotations: {
-                        line1: {
-                            type: 'line',
-                            scaleID: 'x',
-                            value: 600,
-                            borderColor: 'orange',
-                            borderWidth: 2,
-                            label: {
-                                enabled: true,
-                                content: '600'
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    })
-})
+
     const getUsers = async () => {
   const response = await fetch("https://five41kate.onrender.com/users")
   const data = await response.json()
@@ -126,18 +153,20 @@ addUserButton.addEventListener("click", async (e) => {
 })
 
 
-// eslint-disable-next-line no-unused-vars
-const getUsersByDuration = async () => {
-  const response = await fetch("https://five41kate.onrender.com/users/duration")
-  const data = await response.json()
-  return data
-}
 
+
+// gets an array of username and total_duration. For making the bar chart
 const getActivities = async () => {
   const response = await fetch("https://five41kate.onrender.com/activities/list")
   const data = await response.json()
   return data
 }
+
+//input data into the chart --> try just changing the input to getActivities
+/* const inputChartData = async () => {
+  const data = await getUsersByDuration()
+  document.getElementById("bar-chart").data = data */
+
 
 // eslint-disable-next-line no-unused-vars
 const addActivity = async (user_id, duration, date, memo) => {
@@ -174,6 +203,7 @@ SaveButton.addEventListener("click", async (e) => {
 
   //load the list data
   renderListActivities()
+  chartLabels()
 
   // Reset the form fields
   document.getElementById("select-name").value = "";
@@ -249,8 +279,9 @@ document.getElementById("expand-user-button").addEventListener("click", () => {
 
  //to do 
  /* 
- - Add in the chart data (what is the structure)
  - Add in the total minutes (also in the chart--need structure)
- - Populate the scrolling below (how to get the data)
- - Sort the data by date
+ - Prevent bad data saving
+- add auto date of today
+
+ - Sort the data by date (Matt to do)
  - Add filter functionality*/
