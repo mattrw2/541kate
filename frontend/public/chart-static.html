@@ -1,0 +1,95 @@
+<!doctype html>
+
+<html class="h-full" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="favicon.ico" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="This is Kate Wilson's personal website. She is based in Bend Oregon, and is a former educator."
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.0.2"></script>
+    <title>541kate</title>
+  </head>
+  <body class="h-full">
+    <header>
+      <div id="header-image" class=" bg-gray-200" style="background: url('IMG_1096.jpg'); background-size: cover !important; 
+      background-position: left !important; width: 100%; height: 150px;">
+      </div>
+      <div class="absolute top-0 right-0 p-4 text-white font-extralight text-xl">Christmas Sweat-ers</div>
+      <div class="absolute top-10 right-5 p-4 ">
+        <img src="jogging.png" class="w-20 h-20">
+      </div>
+  </header>
+
+  <div class="max-h-[500px]">
+      <canvas id="bar-chart" width="400" height="400" ></canvas>
+  </div>
+  <div class="flex justify-center max-w-[500px]">   
+    <button id="add-button"
+    class="bg-transparent rounded hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white p-1 border mb-1 border-yellow-600 hover:border-transparent">
+    Add Activity
+    </button>
+  </div>
+  <div class="max-w-[530px]">
+    <hr class="mx-4 my-1 border-gray-300 mb-2" />
+  </div>
+  <div style="display: none;" id="exercise-input">
+    <form >
+      <select required id="select-name" name="name" placeholder="Name" class="w-[calc(100%-4rem)] max-w-[500px] p-2 ml-4 mr-2 border rounded font-thin"></select>
+
+      </select>
+      <button  type="button" class="font-thin text-2xl" id="expand-user-button">+</button>
+      <div id="root"></div>
+      <div id="data-fetching" style="display: none;">
+        <form id="add-user-form">
+          <input type="text" id="username-input" placeholder="Name" class="p-2 py-1 font-thin border ml-10 mt-1 rounded placeholder-gray-400" style="width: auto; max-width: 450px;" />
+          <button type="submit" class="border-yellow-600 text-yellow-600 hover:bg-yellow-600 hover:text-white font-thin border rounded p-2 py-1" id="add-user-button">Add User</button>
+        </form>
+        <ul id="user-list"></ul>
+      </div>
+      <input id="select-date" name="date" type="date" class="font-thin w-30 mx-4 p-2 border mt-1 rounded" min="2024-12-01" max="2024-12-31" /><br />
+      <input required id="select-time" name="time" type="number" placeholder="0" min="0"
+          class="font-thin w-12 p-2 ml-4 mr-1 mt-1 border rounded" style="-moz-appearance: textfield;" /> 
+      <span class="font-thin">minutes</span><br />
+      <style>
+        /* Remove arrows in input number for Chrome, Safari, Edge, Opera */
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        /* Remove arrows in input number for Firefox */
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+      </style>
+      <textarea id="write-description" name="description" placeholder="Description"
+          class="font-thin border rounded mx-4 m-1 w-[calc(100%-2rem)] max-w-[500px] px-2 py-1"></textarea><br />
+      <button id="save-button" type="submit" class="mx-4 mb-1 bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-2 px-4 border border-yellow-600 hover:border-transparent rounded">
+          Save
+      </button>
+      <hr class="my-1 border-gray-300 mb-2" />
+    </form>
+  </div>
+<!--   <div class="max-w-[530px]">   
+    <button id="sort-button" class="mx-4 mb-2 hover:bg-transparent bg-yellow-600 hover:text-yellow-600 font-thin text-white px-2 border border-yellow-600 hover:border-transparent rounded">
+      <span class="inline-block transform ">&#9660;</span> Filter
+    </button>
+    <span class="float-right mr-4 font-thin">Total: 150 min</span>
+  </div> -->
+  <div id="activity-log">
+      <ul id = "activity-list"></ul>
+  </div>
+    
+
+    
+
+    <script src="./chart.js"></script>
+  </body>
+</html>
