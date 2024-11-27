@@ -184,11 +184,18 @@ const addActivity = async (user_id, duration, date, memo) => {
 
 //validate the form
 const validateForm = (user_id, duration, date, memo) => {
-  if (user_id !== "Select an option" && user_id !== "" && duration !== null && duration >= 0 && date !== "" && memo !== "") {
-    return
-  } else {
-      alert("Please fill out all fields correctly.");
-      return;}}
+  if (user_id === "Select an option" || user_id === "") {
+    alert("Please select a user.");
+    return false;}
+  if (duration === null || duration < 0) {
+    alert("Please enter a valid time.");
+    return false;}
+  if (date === "") {
+      alert("Please enter a date.");
+      return false;
+    }
+    return true;
+  }
 
 //What happens when you click the save button
 const SaveButton = document.getElementById("save-button")
@@ -198,7 +205,8 @@ SaveButton.addEventListener("click", async (e) => {
   const date = document.getElementById("select-date").value
   const memo = document.getElementById("write-description").value
 
-  validateForm(user_id, duration, date, memo)
+  if (!validateForm(user_id, duration, date, memo))
+    return;
   await addActivity(user_id, duration, date, memo)
 
   //load the list data
@@ -240,7 +248,7 @@ const renderListActivities = async () => {
     descriptionContainerSpan.textContent = activity.memo
     const descriptionContainerSpan2 = document.createElement("span")
     descriptionContainerSpan2.className = "flex flex-col text-left w-full"
-    descriptionContainerSpan2.textContent = activity.user_id
+    descriptionContainerSpan2.textContent = activity.username
 
     descriptionContainer.appendChild(descriptionContainerSpan2)
     descriptionContainer.appendChild(descriptionContainerSpan)
