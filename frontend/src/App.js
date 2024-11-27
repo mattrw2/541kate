@@ -6,6 +6,7 @@ import France from "./pages/France";
 import Review from "./pages/Review";
 import RentABackpacker from "./pages/RentABackpacker";
 import Home from "./pages/Home";
+import Chart from "./pages/Chart";
 
 const App = () => (
   <Router>
@@ -16,10 +17,8 @@ const App = () => (
         <Route exact path="/france" element={<France />} />
         <Route exact path="/review" element={<Review />} />
         <Route exact path="/rent-a-backpacker" element={<RentABackpacker/>} />
-        <Route path="/chart" component={() => { 
-          window.location.href = "/chart.html"; 
-          return null;
-        }} />
+        <Route exact path="/chart" element={<Chart />} />
+
       </Routes>
     </Shell>
   </Router>
