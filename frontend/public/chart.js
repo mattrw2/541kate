@@ -182,21 +182,44 @@ const addActivity = async (user_id, duration, date, memo) => {
   return data
 }
 
-//validate the form
-const validateForm = (user_id, duration, date, memo) => {
-  if (user_id === "Select an option" || user_id === "") {
-    alert("Please select a user.");
-    return false;}
-  if (duration === null || duration < 0) {
-    alert("Please enter a valid time.");
-    return false;}
-  if (date === "") {
-      alert("Please enter a date.");
-      return false;
-    }
-    return true;
-  }
+function showTooltip(message, element) {
+  const tooltip = document.getElementById("tooltip");
+  tooltip.textContent = message;
+  tooltip.classList.remove("hidden");
 
+  // Calculate the position of the element
+  const rect = element.getBoundingClientRect();
+  const tooltipHeight = tooltip.offsetHeight;
+
+  // Position the tooltip relative to the element
+  tooltip.style.top = `${rect.bottom + window.scrollY}px`; // 5px below the element
+  tooltip.style.left = `${rect.left + window.scrollX}px`; // Align to the left of the element
+
+  // Hide the tooltip after 3 seconds
+  setTimeout(() => {
+    tooltip.classList.add("hidden");
+  }, 3000);
+}
+
+// Validate the form
+const validateForm = (user_id, duration, date, memo) => {
+  const userSelect = document.getElementById("select-name");
+  const durationInput = document.getElementById("select-time");
+  const dateInput = document.getElementById("select-date");
+
+  if (user_id === "Select an option" || user_id === "") {
+    showTooltip("Please select a user.", userSelect);
+    return false;
+  }
+  if (date === "") {
+    showTooltip("Please enter a date.", dateInput);
+    return false;}
+  if (duration === "" || duration < 0) {
+    showTooltip("Please enter a valid time.", durationInput);
+    return false;
+  }
+  return true;
+}
 //What happens when you click the save button
 const SaveButton = document.getElementById("save-button")
 SaveButton.addEventListener("click", async (e) => {
