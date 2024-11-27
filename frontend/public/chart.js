@@ -14,7 +14,6 @@ const chartLabels = async () => {
 
 
   const labels = durationArray.map(user => user.username);
-  console.log(labels)
   const data = {
       labels: labels,
       datasets: [{
