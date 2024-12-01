@@ -8,6 +8,7 @@ let db;
 // Set up our database
 const existingDatabase = fs.existsSync(databaseFile);
 
+
 // TEMPORARY: remove the database file to start fresh
 // if (existingDatabase) {
 //   fs.unlinkSync(databaseFile);
