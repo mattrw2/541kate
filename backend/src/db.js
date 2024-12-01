@@ -2,7 +2,7 @@ const fs = require("fs");
 const sqlite3 = require("sqlite3").verbose();
 const dbWrapper = require("sqlite");
 const path = require("path");
-const databaseFile = path.join(__dirname, "./database/database.db");
+const databaseFile = path.join(__dirname, "../database/database.db");
 let db;
 
 // Set up our database
