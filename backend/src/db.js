@@ -9,6 +9,7 @@ let db;
 const existingDatabase = fs.existsSync(databaseFile);
 
 
+
 const initial_users = [
     { username: "Corban" },
     { username: "Kate" },
