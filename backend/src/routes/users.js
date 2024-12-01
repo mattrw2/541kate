@@ -14,6 +14,17 @@ router.get("/", async (req, res) => {
   }
 })
 
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params
+  try {
+    await db.deleteUser(id)
+    return res.send("User deleted.")
+  } catch (error) {
+    console.error(error)
+    return res.status(500).send("An error occurred while deleting a user.")
+  }
+})
+
 router.get("/duration", async (req, res) => {
   try {
     const users = await db.listUsersByDuration()

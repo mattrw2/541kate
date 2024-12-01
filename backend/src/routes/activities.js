@@ -13,6 +13,17 @@ router.get("/list", async (req, res) => {
     }
     });
 
+router.delete("/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        await db.deleteActivity(id);
+        return res.send("Activity deleted.");
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send("An error occurred while deleting an activity.");
+    }
+});
+
 router.post("/", async (req, res) => {
     const { user_id, duration, memo, date } = req.body;
     if (!user_id || !duration || !date) {

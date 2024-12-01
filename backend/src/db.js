@@ -85,10 +85,18 @@ const addUser = async (username) => {
   return newUser;
 };
 
+const deleteUser = async (id) => {
+  await db.run("DELETE FROM users WHERE id = ?", [id]);
+}
+
 const addActivity = async (user_id, duration, date, memo="") => {
     const result = await db.run("INSERT INTO activities (user_id, duration, memo, date) VALUES (?, ?, ?, ?)", [user_id, duration, memo, date]);
     const newActivity = await db.get("SELECT * FROM activities WHERE id = ?", [result.lastID]);
     return newActivity;
+}
+
+const deleteActivity = async (id) => {
+    await db.run("DELETE FROM activities WHERE id = ?", [id]);
 }
 
 const listActivities = async () => {
@@ -105,4 +113,6 @@ module.exports = {
     addUser,
     listUsersByDuration,
     addActivity,
+    deleteActivity,
+    deleteUser,
 };
