@@ -2,17 +2,11 @@ const fs = require("fs");
 const sqlite3 = require("sqlite3").verbose();
 const dbWrapper = require("sqlite");
 const path = require("path");
-const databaseFile = path.join(__dirname, "database.db");
+const databaseFile = path.join(__dirname, "./database/database.db");
 let db;
 
 // Set up our database
 const existingDatabase = fs.existsSync(databaseFile);
-
-
-// TEMPORARY: remove the database file to start fresh
-// if (existingDatabase) {
-//   fs.unlinkSync(databaseFile);
-// }
 
 const initial_users = [
     { username: "Corban" },
