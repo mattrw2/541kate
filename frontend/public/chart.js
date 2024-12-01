@@ -275,7 +275,8 @@ const renderListActivities = async () => {
     const dateContainer = document.createElement("div")
     dateContainer.className = "flex flex-col items-center w-12"
     const dateContainerSpan = document.createElement("span")
-    const date = new Date(activity.date);
+    const [year, month, day] = activity.date.split("-")
+    const date = new Date(year, month - 1, day);
     const options = { month: 'short', day: 'numeric' };
     dateContainerSpan.textContent = date.toLocaleDateString('en-US', options);    dateContainer.appendChild(dateContainerSpan)
     activityItem.appendChild(dateContainer)
