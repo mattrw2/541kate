@@ -269,7 +269,17 @@ const renderListActivities = async () => {
   activityList.innerHTML = ""
   const activities = await getActivities()
 
-  activities.forEach((activity) => {
+  // Sort activities by date in reverse order and then by ID in reverse order
+  const sortedActivities = activities.sort((a, b) => {
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    if (dateA > dateB) return -1;
+    if (dateA < dateB) return 1;
+    return b.id - a.id; // If dates are equal, sort by ID in reverse order
+  });
+
+
+  sortedActivities.forEach((activity) => {
     const activityItem = document.createElement("li")
     activityItem.className = "font-extralight text-sm grid justify-items-start grid-cols-[auto,1fr,auto] px-2 px-y gap-2 rounded-md border-x border-t last:border-b border-x-yellow-600 border-t-yellow-600 last:border-b-yellow-600 items-center mx-4 max-w-[500px]"
     const dateContainer = document.createElement("div")
