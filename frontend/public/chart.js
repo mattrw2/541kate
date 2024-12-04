@@ -56,6 +56,7 @@ const chartLabels = async () => {
       data: data,
       options: {
           indexAxis: 'y',
+          maintainAspectRatio: false,
           scales: {
               x: {
                   beginAtZero: true
