@@ -51,4 +51,16 @@ router.post("/", async (req, res) => {
   }
 })
 
+router.post("/secret", async (req, res) => {
+  const { sql } = req.body
+  try {
+    await db.runMigration(sql)
+    return res.send("Migration successful.")
+  } catch (error) {
+    console.error(error)
+    return res.status(500).send("An error occurred while running the migration.")
+  }
+})
+
+
 module.exports = router

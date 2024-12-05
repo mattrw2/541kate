@@ -38,5 +38,16 @@ router.post("/", async (req, res) => {
     }
 });
 
+router.post("/increment/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        await db.incrementSusCount(id);
+        return res.send("Sus count incremented.");
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send("An error occurred while incrementing sus count.");
+    }
+})
+
 
 module.exports = router;

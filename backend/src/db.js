@@ -7,11 +7,8 @@ let db;
 
 const data = require("./data.json");
 
-
 // Set up our database
 const existingDatabase = fs.existsSync(databaseFile);
-
-
 
 // populate initial users from data.json and filter out duplicates
 const initial_users = data.map((activities) => {
@@ -87,6 +84,10 @@ const getUsers = async () => {
   return await db.all("SELECT * FROM users order by username");
 };
 
+const runMigration = async (migration) => {
+  await db.run(migration);
+}
+
 const addUser = async (username) => {
   const result =  await db.run("INSERT INTO users (username) VALUES (?)", [username]);
   const newUser = await db.get("SELECT * FROM users WHERE id = ?", [result.lastID]);
@@ -102,6 +103,10 @@ const addActivity = async (user_id, duration, date, memo="") => {
     const newActivity = await db.get("SELECT * FROM activities WHERE id = ?", [result.lastID]);
     return newActivity;
 }
+
+const incrementSusCount = async (id) => {
+    await db.run("UPDATE activities SET sus_count = sus_count + 1 WHERE id = ?", [id]);
+} 
 
 const deleteActivity = async (id) => {
     await db.run("DELETE FROM activities WHERE id = ?", [id]);
@@ -123,4 +128,6 @@ module.exports = {
     addActivity,
     deleteActivity,
     deleteUser,
+    runMigration,
+    incrementSusCount,
 };
