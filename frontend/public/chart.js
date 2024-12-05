@@ -12,6 +12,9 @@ const chartLabels = async () => {
     // Call the function and await its result
   const durationArray = await getUsersByDuration();
 
+  // Sort users by total_duration
+  durationArray.sort((a, b) => b.total_duration - a.total_duration);
+
 
   const labels = durationArray.map(user => user.username);
   const data = {
@@ -62,10 +65,13 @@ const chartLabels = async () => {
                   beginAtZero: true
               },
               y: {
-                  beginAtZero: true,
-                  grid: {
-                      display: false // Remove horizontal grid lines
-                  }
+                beginAtZero: true,
+                grid: {
+                  display: false // Remove horizontal grid lines
+                },
+                ticks: {
+                  autoSkip: false // Ensure labels are not skipped
+                }
               }
           },
           plugins: {
@@ -199,6 +205,15 @@ const addActivity = async (user_id, duration, date, memo) => {
   return data
 }
 
+const incrementLike = async (activityId) => {
+  await fetch(`https://five41kate.onrender.com/activities/increment/${activityId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+}
+
 function showTooltip(message, element) {
   const tooltip = document.getElementById("tooltip");
   tooltip.textContent = message;
@@ -305,14 +320,91 @@ const renderListActivities = async () => {
     descriptionContainer.appendChild(descriptionContainerSpan)
     activityItem.appendChild(descriptionContainer)
 
+    // Create a container for the duration
     const durationContainer = document.createElement("span")
     durationContainer.textContent = activity.duration+" min"
-    activityItem.appendChild(durationContainer)
+
+
+    // Create the like button
+    const likeButton = document.createElement("button")
+    likeButton.className = "bg-transparent text-yellow-600 p-1 font-bold mr-1 flex items-center"
+
+    // Create the image element for the like button
+    const likeImage = document.createElement("img")
+    likeImage.src = "suspicious_gray.png"
+    likeImage.alt = "Sus"
+    likeImage.width = 18
+    likeImage.height = 18
+
+    // Create a span to hold the like count
+    const likeCountSpan = document.createElement("span")
+    likeCountSpan.className = "ml-1"
+    likeCountSpan.textContent = activity.sus_count > 0 ? ` ${activity.sus_count}` : ""
+
+    // Add event listener to the like button
+    let likeCount = activity.sus_count
+    if (likeCount > 0) {
+      likeImage.src = "suspicious.png"
+      //likeButton.classList.add("bg-yellow-600")
+    } else {
+      likeImage.src = "suspicious_gray.png"
+    }
+    likeButton.addEventListener("click", () => {
+      likeCount++
+      likeCountSpan.textContent = ` ${likeCount}`
+      incrementLike(activity.id)
+      if (likeCount > 0) {
+        likeImage.src = "suspicious.png"
+        //likeButton.classList.add("bg-yellow-600")
+      } else {
+        likeImage.src = "suspicious_gray.png"
+      }
+    })
+
+    // Add event listeners for hover effect
+    likeButton.addEventListener("mouseover", () => {
+      likeImage.src = "suspicious.png"
+    })
+
+    likeButton.addEventListener("mouseout", () => {
+      if (likeCount === 0) {
+        likeImage.src = "suspicious_gray.png"
+      }
+    })
+
+    // Append the image and like count span to the like button
+    likeButton.appendChild(likeImage)
+    likeButton.appendChild(likeCountSpan)
+
+    // Create a container for the like button and duration
+    const likeDurationContainer = document.createElement("div")
+    likeDurationContainer.className = "flex items-center"
+
+    
+    // Append the like button and duration container to the likeDurationContainer
+    likeDurationContainer.appendChild(likeButton)
+    likeDurationContainer.appendChild(durationContainer)
+
+
+
+    // Append the likeDurationContainer to the activity item
+    activityItem.appendChild(likeDurationContainer)
 
     activityList.appendChild(activityItem)
   })}
 
 document.onload = renderListActivities()
+
+//this expands the prizes image
+const getPrizesButton = document.getElementById("view-prizes");
+getPrizesButton.addEventListener("click", () => {
+  const prizes = document.getElementById("prizes-img");
+  if (prizes.style.display === "block") {
+    prizes.style.display = "none";
+  } else {
+    prizes.style.display = "block";
+  }
+});
 
 
   //this expands the add exercise form
