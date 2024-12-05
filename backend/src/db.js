@@ -5,22 +5,30 @@ const path = require("path");
 const databaseFile = path.join(__dirname, "../database/database.db");
 let db;
 
+const data = require("./data.json");
+
+
 // Set up our database
 const existingDatabase = fs.existsSync(databaseFile);
 
 
 
+// populate initial users from data.json and filter out duplicates
+const initial_users = data.map((activities) => {
+  return { id: activities.user_id, username: activities.username };
+}).filter((user, index, self) => self.findIndex((t) => t.id === user.id) === index).sort((a, b) => a.id - b.id);
 
 
+const initial_activities = data.map((activity) => {
+  return {
+    user_id: activity.user_id,
+    duration: activity.duration,
+    memo: activity.memo,
+    date: activity.date,
+  };
+});
 
-const initial_users = [
-    { username: "Corban" },
-    { username: "Kate" },
-    { username: "Matte" },
-    ];
-
-const initial_activities = [
-];
+console.log(initial_activities);
 
 const createUsersTableSQL =
   "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE)";

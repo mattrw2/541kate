@@ -1,0 +1,938 @@
+[
+  {
+    "id": 117,
+    "user_id": 19,
+    "duration": 30,
+    "memo": "Cycling, late for work",
+    "date": "2024-12-05",
+    "username": "Abs"
+  },
+  {
+    "id": 120,
+    "user_id": 18,
+    "duration": 45,
+    "memo": "Cycle to and from work",
+    "date": "2024-12-05",
+    "username": "Mote"
+  },
+  {
+    "id": 121,
+    "user_id": 14,
+    "duration": 5,
+    "memo": "Gaga ball with kids",
+    "date": "2024-12-05",
+    "username": "Tim"
+  },
+  {
+    "id": 122,
+    "user_id": 14,
+    "duration": 10,
+    "memo": "Wrestling with kids",
+    "date": "2024-12-05",
+    "username": "Tim"
+  },
+  {
+    "id": 123,
+    "user_id": 14,
+    "duration": 15,
+    "memo": "Chase with kids",
+    "date": "2024-12-05",
+    "username": "Tim"
+  },
+  {
+    "id": 124,
+    "user_id": 10,
+    "duration": 61,
+    "memo": "Bliss Dance",
+    "date": "2024-12-05",
+    "username": "SLSjr"
+  },
+  {
+    "id": 125,
+    "user_id": 5,
+    "duration": 15,
+    "memo": "Walking dogs. Had to pick up poop & was dry heaving the whole time. Help ",
+    "date": "2024-12-05",
+    "username": "Lily"
+  },
+  {
+    "id": 83,
+    "user_id": 16,
+    "duration": 12,
+    "memo": "Ran to school",
+    "date": "2024-12-04",
+    "username": "1scott"
+  },
+  {
+    "id": 84,
+    "user_id": 5,
+    "duration": 30,
+    "memo": "Run. I now can’t feel my fingers ",
+    "date": "2024-12-04",
+    "username": "Lily"
+  },
+  {
+    "id": 85,
+    "user_id": 7,
+    "duration": 6,
+    "memo": "Outhouse ",
+    "date": "2024-12-04",
+    "username": "Nugent"
+  },
+  {
+    "id": 86,
+    "user_id": 14,
+    "duration": 5,
+    "memo": "Stairs",
+    "date": "2024-12-04",
+    "username": "Tim"
+  },
+  {
+    "id": 87,
+    "user_id": 14,
+    "duration": 5,
+    "memo": "Stairs",
+    "date": "2024-12-04",
+    "username": "Tim"
+  },
+  {
+    "id": 88,
+    "user_id": 3,
+    "duration": 27,
+    "memo": "Very brisk walk. many hills.",
+    "date": "2024-12-04",
+    "username": "Matte"
+  },
+  {
+    "id": 89,
+    "user_id": 2,
+    "duration": 27,
+    "memo": "Brisk walk a la Big O'Bagel",
+    "date": "2024-12-04",
+    "username": "Kate"
+  },
+  {
+    "id": 90,
+    "user_id": 7,
+    "duration": 19,
+    "memo": "Brisk walk. And who does stairs for 5 minutes?",
+    "date": "2024-12-04",
+    "username": "Nugent"
+  },
+  {
+    "id": 91,
+    "user_id": 19,
+    "duration": 45,
+    "memo": "Cycling",
+    "date": "2024-12-04",
+    "username": "Abs"
+  },
+  {
+    "id": 92,
+    "user_id": 19,
+    "duration": 8,
+    "memo": "Stress run",
+    "date": "2024-12-04",
+    "username": "Abs"
+  },
+  {
+    "id": 93,
+    "user_id": 15,
+    "duration": 45,
+    "memo": "Core de Force: 9 rounds of high-energy, non-contact, MMA-inspired cardio drills with explosive power moves",
+    "date": "2024-12-04",
+    "username": "True TIM"
+  },
+  {
+    "id": 94,
+    "user_id": 15,
+    "duration": 4,
+    "memo": "Swam 4 laps",
+    "date": "2024-12-04",
+    "username": "True TIM"
+  },
+  {
+    "id": 95,
+    "user_id": 1,
+    "duration": 55,
+    "memo": "Beat Saber",
+    "date": "2024-12-04",
+    "username": "Corban"
+  },
+  {
+    "id": 103,
+    "user_id": 3,
+    "duration": 38,
+    "memo": "Run",
+    "date": "2024-12-04",
+    "username": "Matte"
+  },
+  {
+    "id": 104,
+    "user_id": 10,
+    "duration": 38,
+    "memo": "Pilot butte 🥶",
+    "date": "2024-12-04",
+    "username": "SLSjr"
+  },
+  {
+    "id": 105,
+    "user_id": 9,
+    "duration": 38,
+    "memo": "Pilot butte",
+    "date": "2024-12-04",
+    "username": "Riley"
+  },
+  {
+    "id": 106,
+    "user_id": 1,
+    "duration": 38,
+    "memo": "Pilot butte",
+    "date": "2024-12-04",
+    "username": "Corban"
+  },
+  {
+    "id": 107,
+    "user_id": 21,
+    "duration": 30,
+    "memo": "Bouldering",
+    "date": "2024-12-04",
+    "username": "Fav Chauncey"
+  },
+  {
+    "id": 108,
+    "user_id": 2,
+    "duration": 45,
+    "memo": "Skate ski",
+    "date": "2024-12-04",
+    "username": "Kate"
+  },
+  {
+    "id": 109,
+    "user_id": 7,
+    "duration": 32,
+    "memo": "Treadmill and sauna which I didn’t count ",
+    "date": "2024-12-04",
+    "username": "Nugent"
+  },
+  {
+    "id": 110,
+    "user_id": 14,
+    "duration": 5,
+    "memo": "Stairs",
+    "date": "2024-12-04",
+    "username": "Tim"
+  },
+  {
+    "id": 111,
+    "user_id": 11,
+    "duration": 50,
+    "memo": "Aqua aerobics ",
+    "date": "2024-12-04",
+    "username": "Sharon"
+  },
+  {
+    "id": 112,
+    "user_id": 5,
+    "duration": 2,
+    "memo": "Running testing the change of my heart rate ",
+    "date": "2024-12-04",
+    "username": "Lily"
+  },
+  {
+    "id": 113,
+    "user_id": 8,
+    "duration": 12,
+    "memo": "Run",
+    "date": "2024-12-04",
+    "username": "Rezin"
+  },
+  {
+    "id": 114,
+    "user_id": 8,
+    "duration": 57,
+    "memo": "Pickle ball ",
+    "date": "2024-12-04",
+    "username": "Rezin"
+  },
+  {
+    "id": 116,
+    "user_id": 15,
+    "duration": 30,
+    "memo": "Went up some walls, but like, the hard way",
+    "date": "2024-12-04",
+    "username": "True TIM"
+  },
+  {
+    "id": 119,
+    "user_id": 18,
+    "duration": 45,
+    "memo": "Cycle to and from work",
+    "date": "2024-12-04",
+    "username": "Mote"
+  },
+  {
+    "id": 50,
+    "user_id": 16,
+    "duration": 10,
+    "memo": "Ran back",
+    "date": "2024-12-03",
+    "username": "1scott"
+  },
+  {
+    "id": 54,
+    "user_id": 19,
+    "duration": 10,
+    "memo": "Late for our flight",
+    "date": "2024-12-03",
+    "username": "Abs"
+  },
+  {
+    "id": 56,
+    "user_id": 18,
+    "duration": 10,
+    "memo": "Late for flight ",
+    "date": "2024-12-03",
+    "username": "Mote"
+  },
+  {
+    "id": 57,
+    "user_id": 18,
+    "duration": 10,
+    "memo": "Cycle to work",
+    "date": "2024-12-03",
+    "username": "Mote"
+  },
+  {
+    "id": 58,
+    "user_id": 19,
+    "duration": 10,
+    "memo": "Running groceries up and down 4 flights of stairs",
+    "date": "2024-12-03",
+    "username": "Abs"
+  },
+  {
+    "id": 61,
+    "user_id": 14,
+    "duration": 2,
+    "memo": "Stairs",
+    "date": "2024-12-03",
+    "username": "Tim"
+  },
+  {
+    "id": 62,
+    "user_id": 14,
+    "duration": 5,
+    "memo": "Stairs",
+    "date": "2024-12-03",
+    "username": "Tim"
+  },
+  {
+    "id": 63,
+    "user_id": 10,
+    "duration": 26,
+    "memo": "Running ",
+    "date": "2024-12-03",
+    "username": "SLSjr"
+  },
+  {
+    "id": 64,
+    "user_id": 19,
+    "duration": 75,
+    "memo": "Cycling. Took a lot of wrong turns. ",
+    "date": "2024-12-03",
+    "username": "Abs"
+  },
+  {
+    "id": 65,
+    "user_id": 18,
+    "duration": 75,
+    "memo": "Cycling",
+    "date": "2024-12-03",
+    "username": "Mote"
+  },
+  {
+    "id": 66,
+    "user_id": 3,
+    "duration": 64,
+    "memo": "Bike with Kate",
+    "date": "2024-12-03",
+    "username": "Matte"
+  },
+  {
+    "id": 67,
+    "user_id": 2,
+    "duration": 64,
+    "memo": "Bike up skyliner ",
+    "date": "2024-12-03",
+    "username": "Kate"
+  },
+  {
+    "id": 69,
+    "user_id": 8,
+    "duration": 45,
+    "memo": "Pickle ball ",
+    "date": "2024-12-03",
+    "username": "Rezin"
+  },
+  {
+    "id": 70,
+    "user_id": 1,
+    "duration": 17,
+    "memo": "Ga Ga Ball",
+    "date": "2024-12-03",
+    "username": "Corban"
+  },
+  {
+    "id": 71,
+    "user_id": 15,
+    "duration": 11,
+    "memo": "PT for knee (heart fast, no sweat)",
+    "date": "2024-12-03",
+    "username": "True TIM"
+  },
+  {
+    "id": 72,
+    "user_id": 5,
+    "duration": 25,
+    "memo": "Run",
+    "date": "2024-12-03",
+    "username": "Lily"
+  },
+  {
+    "id": 73,
+    "user_id": 9,
+    "duration": 120,
+    "memo": "Ballet/jujitsu",
+    "date": "2024-12-03",
+    "username": "Riley"
+  },
+  {
+    "id": 74,
+    "user_id": 5,
+    "duration": 40,
+    "memo": "Weightlifting ",
+    "date": "2024-12-03",
+    "username": "Lily"
+  },
+  {
+    "id": 75,
+    "user_id": 15,
+    "duration": 19.833333333333332,
+    "memo": "Aquatic kicks and pulls (196bpm max, inconclusive on sweat)",
+    "date": "2024-12-03",
+    "username": "True TIM"
+  },
+  {
+    "id": 76,
+    "user_id": 12,
+    "duration": 6,
+    "memo": "Dancing to gobble gobble with kids",
+    "date": "2024-12-03",
+    "username": "Jenna"
+  },
+  {
+    "id": 78,
+    "user_id": 17,
+    "duration": 20,
+    "memo": "Run in the cold… #Chaffingnipples",
+    "date": "2024-12-03",
+    "username": "Gabe da babe "
+  },
+  {
+    "id": 79,
+    "user_id": 16,
+    "duration": 11,
+    "memo": "Back home",
+    "date": "2024-12-03",
+    "username": "1scott"
+  },
+  {
+    "id": 80,
+    "user_id": 1,
+    "duration": 38,
+    "memo": "Beat saber",
+    "date": "2024-12-03",
+    "username": "Corban"
+  },
+  {
+    "id": 81,
+    "user_id": 8,
+    "duration": 60,
+    "memo": "Jujitsu ",
+    "date": "2024-12-03",
+    "username": "Rezin"
+  },
+  {
+    "id": 82,
+    "user_id": 6,
+    "duration": 90,
+    "memo": "Running up and down basketball court. Not making shots…",
+    "date": "2024-12-03",
+    "username": "Emmettsperm"
+  },
+  {
+    "id": 115,
+    "user_id": 8,
+    "duration": 6,
+    "memo": "Ga ga ball",
+    "date": "2024-12-03",
+    "username": "Rezin"
+  },
+  {
+    "id": 118,
+    "user_id": 18,
+    "duration": 10,
+    "memo": "Cycle home",
+    "date": "2024-12-03",
+    "username": "Mote"
+  },
+  {
+    "id": 26,
+    "user_id": 4,
+    "duration": 60,
+    "memo": "Crossfit",
+    "date": "2024-12-02",
+    "username": "Jordan"
+  },
+  {
+    "id": 27,
+    "user_id": 14,
+    "duration": 5,
+    "memo": "Stairs",
+    "date": "2024-12-02",
+    "username": "Tim"
+  },
+  {
+    "id": 28,
+    "user_id": 16,
+    "duration": 14,
+    "memo": "14min run up hill. 1.4 mi",
+    "date": "2024-12-02",
+    "username": "1scott"
+  },
+  {
+    "id": 29,
+    "user_id": 7,
+    "duration": 2,
+    "memo": "Cobran plus 1 run to the mailbox",
+    "date": "2024-12-02",
+    "username": "Nugent"
+  },
+  {
+    "id": 30,
+    "user_id": 5,
+    "duration": 60,
+    "memo": "Weightlifting ",
+    "date": "2024-12-02",
+    "username": "Lily"
+  },
+  {
+    "id": 31,
+    "user_id": 2,
+    "duration": 10,
+    "memo": "Bike to footzone",
+    "date": "2024-12-02",
+    "username": "Kate"
+  },
+  {
+    "id": 32,
+    "user_id": 2,
+    "duration": 13,
+    "memo": "Bike from footzone. Max heart rate 206 😬",
+    "date": "2024-12-02",
+    "username": "Kate"
+  },
+  {
+    "id": 33,
+    "user_id": 3,
+    "duration": 50,
+    "memo": "Run",
+    "date": "2024-12-02",
+    "username": "Matte"
+  },
+  {
+    "id": 34,
+    "user_id": 15,
+    "duration": 16.62,
+    "memo": "Swimmimg intensely",
+    "date": "2024-12-02",
+    "username": "True TIM"
+  },
+  {
+    "id": 35,
+    "user_id": 2,
+    "duration": 8,
+    "memo": "fast treadmill while working. Don't recommend.",
+    "date": "2024-12-02",
+    "username": "Kate"
+  },
+  {
+    "id": 36,
+    "user_id": 6,
+    "duration": 3,
+    "memo": "Ping pong (approved by Kate) ",
+    "date": "2024-12-02",
+    "username": "Emmettsperm"
+  },
+  {
+    "id": 37,
+    "user_id": 1,
+    "duration": 63,
+    "memo": "Running",
+    "date": "2024-12-02",
+    "username": "Corban"
+  },
+  {
+    "id": 38,
+    "user_id": 5,
+    "duration": 5,
+    "memo": "Dominating in ping pong ",
+    "date": "2024-12-02",
+    "username": "Lily"
+  },
+  {
+    "id": 39,
+    "user_id": 8,
+    "duration": 21,
+    "memo": "Running",
+    "date": "2024-12-02",
+    "username": "Rezin"
+  },
+  {
+    "id": 40,
+    "user_id": 8,
+    "duration": 25,
+    "memo": "Pickle ball",
+    "date": "2024-12-02",
+    "username": "Rezin"
+  },
+  {
+    "id": 41,
+    "user_id": 2,
+    "duration": 20,
+    "memo": "Speed walking to test out new shoes. Melting down cause they also probably won't work--not included.",
+    "date": "2024-12-02",
+    "username": "Kate"
+  },
+  {
+    "id": 42,
+    "user_id": 3,
+    "duration": 17,
+    "memo": "Gaga ball",
+    "date": "2024-12-02",
+    "username": "Matte"
+  },
+  {
+    "id": 43,
+    "user_id": 1,
+    "duration": 18,
+    "memo": "Trampling Ga Ga Ball",
+    "date": "2024-12-02",
+    "username": "Corban"
+  },
+  {
+    "id": 44,
+    "user_id": 8,
+    "duration": 18,
+    "memo": "Trampoline ",
+    "date": "2024-12-02",
+    "username": "Rezin"
+  },
+  {
+    "id": 45,
+    "user_id": 9,
+    "duration": 19,
+    "memo": "Trampling Ga Ga Ball",
+    "date": "2024-12-02",
+    "username": "Riley"
+  },
+  {
+    "id": 46,
+    "user_id": 1,
+    "duration": 14,
+    "memo": "Trampling Ga Ga Ball",
+    "date": "2024-12-02",
+    "username": "Corban"
+  },
+  {
+    "id": 47,
+    "user_id": 8,
+    "duration": 15,
+    "memo": "Trampoline ",
+    "date": "2024-12-02",
+    "username": "Rezin"
+  },
+  {
+    "id": 48,
+    "user_id": 1,
+    "duration": 14,
+    "memo": "Trampling and wallsits",
+    "date": "2024-12-02",
+    "username": "Corban"
+  },
+  {
+    "id": 49,
+    "user_id": 17,
+    "duration": 45,
+    "memo": "CrossFit workout ",
+    "date": "2024-12-02",
+    "username": "Gabe da babe "
+  },
+  {
+    "id": 51,
+    "user_id": 8,
+    "duration": 13,
+    "memo": "Couch spin",
+    "date": "2024-12-02",
+    "username": "Rezin"
+  },
+  {
+    "id": 52,
+    "user_id": 9,
+    "duration": 26,
+    "memo": "Tredmil/ gumqing",
+    "date": "2024-12-02",
+    "username": "Riley"
+  },
+  {
+    "id": 53,
+    "user_id": 7,
+    "duration": 3,
+    "memo": "50 yards to the outhouse. ",
+    "date": "2024-12-02",
+    "username": "Nugent"
+  },
+  {
+    "id": 59,
+    "user_id": 19,
+    "duration": 9,
+    "memo": "Running down mountainside with a full bladder after winetasting",
+    "date": "2024-12-02",
+    "username": "Abs"
+  },
+  {
+    "id": 68,
+    "user_id": 20,
+    "duration": 25,
+    "memo": "Run",
+    "date": "2024-12-02",
+    "username": "Nicholas "
+  },
+  {
+    "id": 77,
+    "user_id": 21,
+    "duration": 45,
+    "memo": "Lead climb/bouldering ",
+    "date": "2024-12-02",
+    "username": "Fav Chauncey"
+  },
+  {
+    "id": 1,
+    "user_id": 8,
+    "duration": 18,
+    "memo": "Bike to church",
+    "date": "2024-12-01",
+    "username": "Rezin"
+  },
+  {
+    "id": 2,
+    "user_id": 13,
+    "duration": 10,
+    "memo": "Run .8 mi + 30lb",
+    "date": "2024-12-01",
+    "username": "Scott"
+  },
+  {
+    "id": 3,
+    "user_id": 3,
+    "duration": 40,
+    "memo": "Run",
+    "date": "2024-12-01",
+    "username": "Matte"
+  },
+  {
+    "id": 4,
+    "user_id": 14,
+    "duration": 40,
+    "memo": "Run",
+    "date": "2024-12-01",
+    "username": "Tim"
+  },
+  {
+    "id": 5,
+    "user_id": 8,
+    "duration": 11,
+    "memo": "Biking from church",
+    "date": "2024-12-01",
+    "username": "Rezin"
+  },
+  {
+    "id": 6,
+    "user_id": 8,
+    "duration": 15,
+    "memo": "Gaga ball",
+    "date": "2024-12-01",
+    "username": "Rezin"
+  },
+  {
+    "id": 7,
+    "user_id": 9,
+    "duration": 14,
+    "memo": "Gaga ball",
+    "date": "2024-12-01",
+    "username": "Riley"
+  },
+  {
+    "id": 8,
+    "user_id": 1,
+    "duration": 20,
+    "memo": "Ga ga ball. ",
+    "date": "2024-12-01",
+    "username": "Corban"
+  },
+  {
+    "id": 9,
+    "user_id": 7,
+    "duration": 20,
+    "memo": "Gaga",
+    "date": "2024-12-01",
+    "username": "Nugent"
+  },
+  {
+    "id": 10,
+    "user_id": 8,
+    "duration": 5,
+    "memo": "Push-ups pull ups stairs ",
+    "date": "2024-12-01",
+    "username": "Rezin"
+  },
+  {
+    "id": 11,
+    "user_id": 3,
+    "duration": 30,
+    "memo": "Cross country skiing",
+    "date": "2024-12-01",
+    "username": "Matte"
+  },
+  {
+    "id": 12,
+    "user_id": 2,
+    "duration": 57,
+    "memo": "Xc 🎿 ",
+    "date": "2024-12-01",
+    "username": "Kate"
+  },
+  {
+    "id": 13,
+    "user_id": 1,
+    "duration": 60,
+    "memo": "XC ⛷️ ",
+    "date": "2024-12-01",
+    "username": "Corban"
+  },
+  {
+    "id": 14,
+    "user_id": 14,
+    "duration": 57,
+    "memo": "XC ski",
+    "date": "2024-12-01",
+    "username": "Tim"
+  },
+  {
+    "id": 15,
+    "user_id": 7,
+    "duration": 61,
+    "memo": "XXSki",
+    "date": "2024-12-01",
+    "username": "Nugent"
+  },
+  {
+    "id": 16,
+    "user_id": 8,
+    "duration": 16,
+    "memo": "Run with dad",
+    "date": "2024-12-01",
+    "username": "Rezin"
+  },
+  {
+    "id": 17,
+    "user_id": 4,
+    "duration": 16,
+    "memo": "Run with Rez ",
+    "date": "2024-12-01",
+    "username": "Jordan"
+  },
+  {
+    "id": 18,
+    "user_id": 8,
+    "duration": 10,
+    "memo": "Walk with mom",
+    "date": "2024-12-01",
+    "username": "Rezin"
+  },
+  {
+    "id": 19,
+    "user_id": 9,
+    "duration": 21,
+    "memo": "Haha ball with popster, run with popster, play at park",
+    "date": "2024-12-01",
+    "username": "Riley"
+  },
+  {
+    "id": 20,
+    "user_id": 1,
+    "duration": 11,
+    "memo": "Ga Ga Ball",
+    "date": "2024-12-01",
+    "username": "Corban"
+  },
+  {
+    "id": 21,
+    "user_id": 8,
+    "duration": 10,
+    "memo": "Ga Ga Ball",
+    "date": "2024-12-01",
+    "username": "Rezin"
+  },
+  {
+    "id": 22,
+    "user_id": 7,
+    "duration": 9,
+    "memo": "Grueling run with riley",
+    "date": "2024-12-01",
+    "username": "Nugent"
+  },
+  {
+    "id": 23,
+    "user_id": 15,
+    "duration": 42,
+    "memo": "Spinning some pickleballs",
+    "date": "2024-12-01",
+    "username": "True TIM"
+  },
+  {
+    "id": 24,
+    "user_id": 10,
+    "duration": 29,
+    "memo": "Brisk walk ",
+    "date": "2024-12-01",
+    "username": "SLSjr"
+  },
+  {
+    "id": 25,
+    "user_id": 6,
+    "duration": 3,
+    "memo": "Christmas tree cutting ",
+    "date": "2024-12-01",
+    "username": "Emmettsperm"
+  },
+  {
+    "id": 60,
+    "user_id": 19,
+    "duration": 7,
+    "memo": "Hiked for 11 miles. 7 zone minutes 🥲",
+    "date": "2024-12-01",
+    "username": "Abs"
+  }
+]
