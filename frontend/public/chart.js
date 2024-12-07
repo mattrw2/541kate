@@ -285,14 +285,8 @@ const renderListActivities = async () => {
   activityList.innerHTML = ""
   const activities = await getActivities()
 
-  // Sort activities by date in reverse order and then by ID in reverse order
-  const sortedActivities = activities.sort((a, b) => {
-    const dateA = new Date(a.date);
-    const dateB = new Date(b.date);
-    if (dateA > dateB) return -1;
-    if (dateA < dateB) return 1;
-    return b.id - a.id; // If dates are equal, sort by ID in reverse order
-  });
+  // Sort activities by ID in reverse order
+  const sortedActivities = activities.sort((a, b) => b.id - a.id);
 
 
   sortedActivities.forEach((activity) => {
