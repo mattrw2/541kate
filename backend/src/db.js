@@ -25,7 +25,6 @@ const initial_activities = data.map((activity) => {
   };
 });
 
-console.log(initial_activities);
 
 const createUsersTableSQL =
   "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE)";
@@ -98,8 +97,8 @@ const deleteUser = async (id) => {
   await db.run("DELETE FROM users WHERE id = ?", [id]);
 }
 
-const addActivity = async (user_id, duration, date, memo="") => {
-    const result = await db.run("INSERT INTO activities (user_id, duration, memo, date) VALUES (?, ?, ?, ?)", [user_id, duration, memo, date]);
+const addActivity = async (user_id, duration, date, memo="", photo_path=null) => {
+    const result = await db.run("INSERT INTO activities (user_id, duration, memo, date, photo_path) VALUES (?, ?, ?, ?, ?)", [user_id, duration, memo, date, photo_path]);
     const newActivity = await db.get("SELECT * FROM activities WHERE id = ?", [result.lastID]);
     return newActivity;
 }

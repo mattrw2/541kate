@@ -55,7 +55,7 @@
       <div id="root"></div>
       <div id="data-fetching" style="display: none;">
         <form id="add-user-form">
-          <input type="text" id="username-input" placeholder="Name" class="p-2 py-1 font-thin border ml-10 mt-1 rounded placeholder-gray-400" style="width: auto; max-width: 450px;" />
+          <input type="text" id="username-input"> placeholder="Name" class="p-2 py-1 font-thin border ml-10 mt-1 rounded placeholder-gray-400" style="width: auto; max-width: 450px;" />
           <button type="submit" class="border-yellow-600 text-yellow-600 hover:bg-yellow-600 hover:text-white font-thin border rounded p-2 py-1" id="add-user-button">Add User</button>
         </form>
         <ul id="user-list"></ul>
@@ -64,6 +64,7 @@
       <input required id="select-time" name="time" type="number" placeholder="0" min="0"
           class="font-thin w-12 p-2 ml-4 mr-1 mt-1 border rounded" style="-moz-appearance: textfield;" /> 
       <span class="font-thin">minutes</span><br />
+      
       <style>
         /* Remove arrows in input number for Chrome, Safari, Edge, Opera */
         input[type=number]::-webkit-outer-spin-button,
@@ -77,7 +78,27 @@
         }
       </style>
       <textarea id="write-description" name="description" placeholder="Description"
-          class="font-thin border rounded mx-4 m-1 w-[calc(100%-2rem)] max-w-[500px] px-2 py-1"></textarea><br />
+          class="font-thin border rounded mx-4 mt-1 w-[calc(100%-2rem)] max-w-[500px] px-2 py-1"></textarea>
+      <button class="ml-4 mb-2 font-thin border rounded border-gray-200 w-[130px] hover:bg-gray-100 py-2 flex flex-col items-center justify-center " 
+            onclick="document.getElementById('imagePicker').click()"
+            type="button">
+            <input
+            type="file"
+            id="imagePicker"
+            accept="image/*"
+            style="display: none"
+          />
+            <div class="flex flex-row items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5 text-gray-500 ml-2">
+                <path fill-rule="evenodd" d="M1 8a2 2 0 0 1 2-2h.93a2 2 0 0 0 1.664-.89l.812-1.22A2 2 0 0 1 8.07 3h3.86a2 2 0 0 1 1.664.89l.812 1.22A2 2 0 0 0 16.07 6H17a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8Zm13.5 3a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM10 14a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd" />
+              </svg>      
+              <div class="ml-2"
+              >
+                Add Image
+              </div>
+            </div>
+            <span id="selected-image" class="font-thin"></span>
+        </button>
       <button id="save-button" type="submit" class="mx-4 mb-1 bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-2 px-4 border border-yellow-600 hover:border-transparent rounded">
           Save
       </button>
