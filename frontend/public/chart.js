@@ -268,6 +268,8 @@ SaveButton.addEventListener("click", async (e) => {
   document.getElementById("select-time").value = ""
   document.getElementById("select-date").value = ""
   document.getElementById("write-description").value = ""
+  document.getElementById("selected-image").innerHTML = "" // Reset the file input field
+
 
   // Hide the form
   document.getElementById("exercise-input").style.display = "none"
