@@ -24,20 +24,6 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
-router.post("/", async (req, res) => {
-    const { user_id, duration, memo, date } = req.body;
-    if (!user_id || !duration || !date) {
-        return res.status(400).send("User ID, duration, and date are required.");
-    }
-    try {
-        const newActivity = await db.addActivity(user_id, duration, date, memo);
-        return res.json(newActivity);
-    } catch (error) {
-        console.error(error);
-        return res.status(500).send("An error occurred while adding an activity.");
-    }
-});
-
 router.post("/increment/:id", async (req, res) => {
     const { id } = req.params;
     try {
