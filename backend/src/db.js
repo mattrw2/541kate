@@ -7,6 +7,12 @@ let db;
 
 const data = require("./data.json");
 
+// create the uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, "../database/uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+
 // Set up our database
 const existingDatabase = fs.existsSync(databaseFile);
 
