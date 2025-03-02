@@ -112,11 +112,11 @@ const deleteActivity = async (id) => {
 }
 
 const listActivities = async () => {
-    return await db.all("SELECT a.*, u.username FROM activities a JOIN users u ON a.user_id = u.id order by a.date desc");
+    return await db.all("SELECT a.*, u.username FROM activities a JOIN users u ON a.user_id = u.id WHERE a.IS_ARCHIVED=false order by a.date desc");
 };
 
 const listUsersByDuration = async () => {
-    return await db.all("SELECT users.username, SUM(activities.duration) as total_duration FROM users JOIN activities ON users.id = activities.user_id GROUP BY users.id ORDER BY users.username DESC");
+    return await db.all("SELECT users.username, SUM(activities.duration) as total_duration FROM users JOIN activities ON users.id = activities.user_id WHERE activities.IS_ARCHIVED=FALSE GROUP BY users.id ORDER BY users.username DESC");
 };
 
 module.exports = {

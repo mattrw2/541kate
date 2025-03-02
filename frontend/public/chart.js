@@ -424,17 +424,6 @@ const renderListActivities = async () => {
 
 document.onload = renderListActivities()
 
-//this expands the prizes image
-const getPrizesButton = document.getElementById("view-prizes")
-getPrizesButton.addEventListener("click", () => {
-  const prizes = document.getElementById("prizes-img")
-  if (prizes.style.display === "block") {
-    prizes.style.display = "none"
-  } else {
-    prizes.style.display = "block"
-  }
-})
-
 //this expands the add exercise form
 const getAddButton = document.getElementById("add-button")
 getAddButton.addEventListener("click", () => {
