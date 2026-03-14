@@ -336,7 +336,7 @@ const getChallengeDuration = async (challenge_id) => {
     `SELECT u.id, u.username, COALESCE(SUM(a.duration), 0) as total_duration
     FROM challenge_participants cp
     JOIN users u ON cp.user_id = u.id
-    LEFT JOIN activities a ON a.user_id = u.id AND a.challenge_id = ?
+    LEFT JOIN activities a ON a.user_id = u.id AND a.challenge_id = ? AND (a.IS_ARCHIVED IS NULL OR a.IS_ARCHIVED = 0)
     WHERE cp.challenge_id = ?
     GROUP BY u.id, u.username
     ORDER BY total_duration DESC`,

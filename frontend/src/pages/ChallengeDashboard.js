@@ -507,7 +507,7 @@ const ChallengeDashboard = () => {
                     {prize.description && <span className="text-gray-600"> — {prize.description}</span>}
                     {prize.username && <span className="text-xs text-gray-400"> by {prize.username}</span>}
                   </span>
-                  {currentUser?.id === prize.user_id && (
+                  {(prize.user_id == null || currentUser?.id === prize.user_id) && (
                     <button
                       onClick={() => { if (window.confirm("Delete this prize?")) deletePrize.mutate(prize.id) }}
                       className="text-gray-300 hover:text-red-400 transition-colors ml-2 flex-shrink-0"
@@ -536,7 +536,7 @@ const ChallengeDashboard = () => {
             )}
           </div>
           <ul className="space-y-2">
-            {(showAllActivities ? activities : activities.slice(0, 20)).map((activity) => (
+            {(showAllActivities ? activities : activities.slice(0, 20)).filter((a) => !a.IS_ARCHIVED).map((activity) => (
               <ActivityItem
                 key={activity.id}
                 activity={activity}
