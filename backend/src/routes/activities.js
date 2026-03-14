@@ -15,7 +15,11 @@ router.get("/list", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
     const { id } = req.params;
+    const { lat, lng, deleted_by } = req.body || {};
     try {
+        if (lat != null && lng != null) {
+            console.log(`🗑️  Activity ${id} deleted by ${deleted_by || "unknown"} at [${lat}, ${lng}]`);
+        }
         await db.deleteActivity(id);
         return res.send("Activity deleted.");
     } catch (error) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
-import { useParams, Link } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { Dialog } from "@headlessui/react"
 import { Bar } from "react-chartjs-2"
 import {
   Chart as ChartJS,
@@ -34,16 +35,15 @@ const BORDER_COLORS = [
   "rgb(201, 203, 207)",
 ]
 
-const ActivityItem = ({ activity, onIncrementSus }) => {
+const ActivityItem = ({ activity, onIncrementSus, onDelete }) => {
   const [showFullPhoto, setShowFullPhoto] = useState(false)
   const [susCount, setSusCount] = useState(activity.sus_count || 0)
   const [hovering, setHovering] = useState(false)
 
   const [year, month, day] = activity.date.split("-")
-  const dateStr = new Date(year, month - 1, day).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  })
+  const date = new Date(year, month - 1, day)
+  const monthStr = date.toLocaleDateString("en-US", { month: "short" })
+  const dayStr = date.toLocaleDateString("en-US", { day: "numeric" })
 
   const handleSus = (e) => {
     e.stopPropagation()
@@ -55,50 +55,62 @@ const ActivityItem = ({ activity, onIncrementSus }) => {
 
   return (
     <li
-      className={`font-extralight text-sm grid justify-items-start grid-cols-[auto,1fr,auto] px-2 gap-2 rounded-md border-x border-t last:border-b border-x-yellow-600 border-t-yellow-600 last:border-b-yellow-600 items-start pt-2 mx-4 max-w-[500px] ${activity.photo_path ? "hover:cursor-pointer" : ""}`}
+      className={`flex items-start gap-3 px-3 py-2.5 bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow transition-shadow ${activity.photo_path ? "cursor-pointer" : ""}`}
       onClick={() => activity.photo_path && setShowFullPhoto((v) => !v)}
     >
-      <div className="flex flex-col items-center w-12">
-        <span>{dateStr}</span>
+      <div className="flex-shrink-0 text-center w-8 pt-0.5">
+        <div className="text-[10px] uppercase tracking-wide text-gray-400">{monthStr}</div>
+        <div className="text-lg font-light text-gray-700 leading-tight">{dayStr}</div>
       </div>
 
-      <div className="mb-1">
-        <span className="flex flex-col text-left w-full">{activity.username}</span>
-        <span className="text-xs text-yellow-600">{activity.memo}</span>
+      <div className="w-px bg-yellow-400 self-stretch flex-shrink-0" />
+
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium text-gray-800">{activity.username}</div>
+        {activity.memo && (
+          <div className="text-xs text-gray-500 mt-0.5">{activity.memo}</div>
+        )}
+        {activity.lat != null && activity.lng != null && (
+          <a
+            href={`https://www.google.com/maps?q=${activity.lat},${activity.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-xs text-gray-400 hover:text-yellow-500 mt-0.5 block"
+          >
+            📍 {activity.lat.toFixed(4)}, {activity.lng.toFixed(4)}
+          </a>
+        )}
         {activity.photo_path && showFullPhoto && (
-          <img
-            src={`${apiUrl}${activity.photo_path}`}
-            alt="activity"
-            style={{ width: "auto", height: "auto" }}
-          />
+          <img src={`${apiUrl}${activity.photo_path}`} alt="activity" className="mt-2 rounded-md max-w-full" />
         )}
       </div>
 
-      <div className="flex items-center">
+      <div className="flex items-center gap-2 flex-shrink-0">
         {activity.photo_path && !showFullPhoto && (
-          <img
-            src={`${apiUrl}${activity.photo_path}`}
-            alt="thumbnail"
-            width={30}
-            height={30}
-            className="mr-2"
-          />
+          <img src={`${apiUrl}${activity.photo_path}`} alt="thumbnail" className="w-8 h-8 rounded object-cover" />
         )}
         <button
-          className="bg-transparent text-yellow-600 p-1 font-bold mr-1 flex items-center"
+          className="flex items-center gap-0.5 text-gray-400 hover:text-yellow-500 transition-colors"
           onClick={handleSus}
           onMouseOver={() => setHovering(true)}
           onMouseOut={() => setHovering(false)}
         >
-          <img
-            src={susActive ? "/suspicious.png" : "/suspicious_gray.png"}
-            alt="Sus"
-            width={18}
-            height={18}
-          />
-          {susCount > 0 && <span className="ml-1">{susCount}</span>}
+          <img src={susActive ? "/suspicious.png" : "/suspicious_gray.png"} alt="Sus" width={16} height={16} />
+          {susCount > 0 && <span className="text-xs">{susCount}</span>}
         </button>
-        <span>{activity.duration} min</span>
+        <span className="text-sm font-light text-gray-600 whitespace-nowrap">
+          {activity.duration}<span className="text-xs text-gray-400 ml-0.5">min</span>
+        </span>
+        {onDelete && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(activity.id) }}
+            className="text-gray-300 hover:text-red-400 transition-colors text-xs leading-none"
+            title="Delete"
+          >
+            ✕
+          </button>
+        )}
       </div>
     </li>
   )
@@ -124,60 +136,51 @@ const ChallengeDashboard = () => {
     queryFn: () => fetch(`${apiUrl}/challenges/${id}/activities`).then((r) => r.json()),
   })
 
-  const { data: participants = [] } = useQuery({
-    queryKey: ["challenge", id, "participants"],
-    queryFn: () => fetch(`${apiUrl}/challenges/${id}/participants`).then((r) => r.json()),
-  })
-
   const { data: prizes = [] } = useQuery({
     queryKey: ["challenge", id, "prizes"],
     queryFn: () => fetch(`${apiUrl}/challenges/${id}/prizes`).then((r) => r.json()),
   })
 
+  const { data: participants = [] } = useQuery({
+    queryKey: ["challenge", id, "participants"],
+    queryFn: () => fetch(`${apiUrl}/challenges/${id}/participants`).then((r) => r.json()),
+    enabled: !!challenge && currentUser?.id === challenge.admin_user_id,
+  })
+
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => fetch(`${apiUrl}/users`).then((r) => r.json()),
+    enabled: !!challenge && currentUser?.id === challenge.admin_user_id,
+  })
+
+  const today = new Date().toLocaleDateString("en-CA")
   const [showForm, setShowForm] = useState(false)
-  const [showAddUser, setShowAddUser] = useState(false)
-  const [formData, setFormData] = useState({ user_id: "", duration: "", date: "", memo: "", photo: null })
-  const [newUsername, setNewUsername] = useState("")
+  const [showAllActivities, setShowAllActivities] = useState(false)
+  const [formData, setFormData] = useState({ duration: "", date: today, memo: "", photo: null })
   const [tooltip, setTooltip] = useState(null)
   const [showPrizeForm, setShowPrizeForm] = useState(false)
   const [prizeForm, setPrizeForm] = useState({ name: "", description: "" })
+  const [showManage, setShowManage] = useState(false)
+  const [manageForm, setManageForm] = useState({ name: "", description: "", goal_minutes: 600, start_date: "", end_date: "" })
+  const [manageSaveSuccess, setManageSaveSuccess] = useState(false)
+  const [addUserId, setAddUserId] = useState("")
 
   useEffect(() => {
-    if (currentUser && participants.length > 0) {
-      const isParticipant = participants.some((p) => p.id === currentUser.id)
-      if (isParticipant) setFormData((f) => ({ ...f, user_id: currentUser.id }))
+    if (challenge && showManage) {
+      setManageForm({
+        name: challenge.name || "",
+        description: challenge.description || "",
+        goal_minutes: challenge.goal_minutes || 600,
+        start_date: challenge.start_date || "",
+        end_date: challenge.end_date || "",
+      })
     }
-  }, [currentUser, participants])
+  }, [challenge, showManage])
 
   const showTooltipMsg = (msg) => {
     setTooltip(msg)
     setTimeout(() => setTooltip(null), 3000)
   }
-
-  const addUserMutation = useMutation({
-    mutationFn: async (username) => {
-      const res = await fetch(`${apiUrl}/users`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
-      })
-      const user = await res.json()
-      await fetch(`${apiUrl}/challenges/${id}/participants`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.id }),
-      })
-      return user
-    },
-    onSuccess: (user) => {
-      queryClient.invalidateQueries({ queryKey: ["challenge", id, "participants"] })
-      queryClient.invalidateQueries({ queryKey: ["users"] })
-      setFormData((f) => ({ ...f, user_id: user.id }))
-      setShowAddUser(false)
-      setNewUsername("")
-    },
-    onError: () => showTooltipMsg("Failed to add user."),
-  })
 
   const saveActivity = useMutation({
     mutationFn: (fd) =>
@@ -185,7 +188,7 @@ const ChallengeDashboard = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "activities"] })
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "duration"] })
-      setFormData({ user_id: currentUser?.id || "", duration: "", date: "", memo: "", photo: null })
+      setFormData({ duration: "", date: today, memo: "", photo: null })
       setShowForm(false)
     },
   })
@@ -196,6 +199,42 @@ const ChallengeDashboard = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       }),
+  })
+
+  const deleteActivity = useMutation({
+    mutationFn: ({ activityId, lat, lng }) =>
+      fetch(`${apiUrl}/activities/${activityId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat, lng, deleted_by: currentUser?.username }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["challenge", id, "activities"] })
+      queryClient.invalidateQueries({ queryKey: ["challenge", id, "duration"] })
+    },
+  })
+
+  const handleDeleteActivity = (activityId) => {
+    if (!window.confirm("Delete this activity?")) return
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser. Cannot delete.")
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        deleteActivity.mutate({ activityId, lat: pos.coords.latitude, lng: pos.coords.longitude })
+      },
+      () => {
+        alert("Location access is required to delete an activity.")
+      }
+    )
+  }
+
+  const deletePrize = useMutation({
+    mutationFn: (prizeId) =>
+      fetch(`${apiUrl}/challenges/${id}/prizes/${prizeId}`, { method: "DELETE" }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["challenge", id, "prizes"] }),
   })
 
   const addPrizeMutation = useMutation({
@@ -212,23 +251,57 @@ const ChallengeDashboard = () => {
     },
   })
 
-  const handleAddUser = () => {
-    if (participants.map((u) => u.username).includes(newUsername)) {
-      showTooltipMsg("User already exists in this challenge.")
-      return
-    }
-    addUserMutation.mutate(newUsername)
-  }
+  const updateChallenge = useMutation({
+    mutationFn: (body) =>
+      fetch(`${apiUrl}/challenges/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["challenge", id] })
+      setManageSaveSuccess(true)
+      setTimeout(() => setManageSaveSuccess(false), 3000)
+    },
+  })
+
+  const addParticipant = useMutation({
+    mutationFn: (user_id) =>
+      fetch(`${apiUrl}/challenges/${id}/participants`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id }),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["challenge", id, "participants"] })
+      setAddUserId("")
+    },
+  })
+
+  const removeParticipant = useMutation({
+    mutationFn: (userId) =>
+      fetch(`${apiUrl}/challenges/${id}/participants/${userId}`, { method: "DELETE" }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["challenge", id, "participants"] }),
+  })
 
   const handleSave = () => {
-    const { user_id, duration, date, memo, photo } = formData
-    if (!user_id) { showTooltipMsg("Please select a user."); return }
+    const { duration, date, memo, photo } = formData
     if (!date) { showTooltipMsg("Please enter a date."); return }
     if (!duration || duration < 0) { showTooltipMsg("Please enter a valid time."); return }
-    const fd = new FormData()
-    fd.append("data", JSON.stringify({ user_id, duration, date, memo, challenge_id: id }))
-    if (photo) fd.append("photo", photo)
-    saveActivity.mutate(fd)
+    if (!navigator.geolocation) {
+      showTooltipMsg("Geolocation is not supported by your browser.")
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const fd = new FormData()
+        fd.append("data", JSON.stringify({ user_id: currentUser.id, duration, date, memo, challenge_id: id, lat: pos.coords.latitude, lng: pos.coords.longitude }))
+        if (photo) fd.append("photo", photo)
+        saveActivity.mutate(fd)
+      },
+      () => { showTooltipMsg("Location access is required to log an activity.") }
+    )
   }
 
   const handleAddPrize = () => {
@@ -273,8 +346,12 @@ const ChallengeDashboard = () => {
     return new Date(year, month - 1, day).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
   }
 
+  const participantIds = participants.map((p) => p.id)
+  const nonParticipants = allUsers.filter((u) => !participantIds.includes(u.id))
+
   return (
-    <div>
+    <div className="max-w-3xl mx-auto">
+      {/* Full-width header */}
       <header className="relative">
         <div
           className="bg-gray-200"
@@ -288,202 +365,290 @@ const ChallengeDashboard = () => {
         </div>
       </header>
 
-      {challenge && (
-        <div className="mx-4 mt-3 max-w-[500px]">
-          {challenge.description && (
-            <p className="font-thin text-sm text-gray-600">{challenge.description}</p>
-          )}
-          <div className="flex items-center gap-4 text-xs font-thin text-gray-500 mt-1">
-            {(challenge.start_date || challenge.end_date) && (
-              <span>
-                {formatDate(challenge.start_date)}
-                {challenge.start_date && challenge.end_date ? " – " : ""}
-                {formatDate(challenge.end_date)}
-              </span>
-            )}
-            <span>Goal: {challenge.goal_minutes} min</span>
-            {currentUser?.id === challenge.admin_user_id && (
-              <Link
-                to={`/challenge/${id}/manage`}
-                className="ml-auto text-yellow-600 border border-yellow-600 rounded px-2 py-0.5 text-xs font-thin hover:bg-yellow-600 hover:text-white"
-              >
-                Manage
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
-
-      {challenge && chartOptions && (
-        <div style={{ height: "500px" }}>
-          <Bar data={chartData} options={chartOptions} />
-        </div>
-      )}
-
-      {/* Prizes */}
-      <div className="mx-4 mt-4 max-w-[500px]">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-thin text-base">Prizes</h3>
-          <button
-            onClick={() => setShowPrizeForm((v) => !v)}
-            className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-0.5 px-2 border border-yellow-600 hover:border-transparent rounded text-sm"
-          >
-            Add Prize
-          </button>
-        </div>
-
-        {showPrizeForm && (
-          <div className="mb-3">
-            <input
-              type="text"
-              value={prizeForm.name}
-              onChange={(e) => setPrizeForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder="Prize name"
-              className="font-thin border rounded px-2 py-1 w-full mb-1 text-sm"
-            />
-            <input
-              type="text"
-              value={prizeForm.description}
-              onChange={(e) => setPrizeForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="Description"
-              className="font-thin border rounded px-2 py-1 w-full mb-1 text-sm"
-            />
-            <button
-              type="button"
-              onClick={handleAddPrize}
-              disabled={addPrizeMutation.isPending}
-              className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1 px-3 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50"
-            >
-              Save
-            </button>
-          </div>
-        )}
-
-        {prizes.length === 0 && !showPrizeForm && (
-          <p className="text-sm font-thin text-gray-400">No prizes yet.</p>
-        )}
-        <ul className="space-y-1">
-          {prizes.map((prize) => (
-            <li key={prize.id} className="text-sm font-thin border-b border-gray-200 pb-1">
-              <span className="font-normal">{prize.name}</span>
-              {prize.description && <span className="text-gray-600"> — {prize.description}</span>}
-              {prize.username && <span className="text-xs text-gray-400"> by {prize.username}</span>}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {tooltip && <div className="mx-4 text-sm text-red-600 font-thin mt-2">{tooltip}</div>}
-
-      <div className="flex justify-center max-w-[500px] mt-4">
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="bg-transparent rounded hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white p-1 border mb-1 border-yellow-600 hover:border-transparent"
-        >
-          Add Activity
-        </button>
-      </div>
-
-      <div className="max-w-[530px]">
-        <hr className="mx-4 my-1 border-gray-300 mb-2" />
-      </div>
-
-      {showForm && (
+      <div>
         <div>
-          <div className="flex items-center">
-            <select
-              value={formData.user_id}
-              onChange={(e) => setFormData((f) => ({ ...f, user_id: e.target.value }))}
-              className="w-[calc(100%-4rem)] max-w-[500px] p-2 ml-4 mr-2 border rounded font-thin"
-            >
-              <option value="">Select an option</option>
-              {participants.map((u) => (
-                <option key={u.id} value={u.id}>{u.username}</option>
-              ))}
-            </select>
-            <button type="button" className="font-thin text-2xl" onClick={() => setShowAddUser((v) => !v)}>
-              +
-            </button>
-          </div>
-
-          {showAddUser && (
-            <div className="ml-10 mt-1">
-              <input
-                type="text"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                placeholder="Name"
-                className="p-2 py-1 font-thin border rounded placeholder-gray-400 mr-1"
-              />
-              <button
-                type="button"
-                onClick={handleAddUser}
-                disabled={addUserMutation.isPending}
-                className="border-yellow-600 text-yellow-600 hover:bg-yellow-600 hover:text-white font-thin border rounded p-2 py-1 disabled:opacity-50"
-              >
-                Add User
-              </button>
+          {challenge && (
+            <div className="mx-4 mt-3">
+              {challenge.description && (
+                <p className="font-thin text-sm text-gray-600">{challenge.description}</p>
+              )}
+              <div className="flex items-center gap-4 text-xs font-thin text-gray-500 mt-1">
+                {(challenge.start_date || challenge.end_date) && (
+                  <span>
+                    {formatDate(challenge.start_date)}
+                    {challenge.start_date && challenge.end_date ? " – " : ""}
+                    {formatDate(challenge.end_date)}
+                  </span>
+                )}
+                <span>Goal: {challenge.goal_minutes} min</span>
+                {challenge.admin_username && <span>by {challenge.admin_username}</span>}
+                {currentUser?.id === challenge.admin_user_id && (
+                  <button
+                    onClick={() => setShowManage(true)}
+                    className="ml-auto text-yellow-600 border border-yellow-600 rounded px-2 py-0.5 text-xs font-thin hover:bg-yellow-600 hover:text-white"
+                  >
+                    Manage
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
-          <input
-            type="date"
-            value={formData.date}
-            onChange={(e) => setFormData((f) => ({ ...f, date: e.target.value }))}
-            className="font-thin mx-4 p-2 border mt-1 rounded"
-          />
-          <br />
-          <input
-            type="number"
-            value={formData.duration}
-            onChange={(e) => setFormData((f) => ({ ...f, duration: e.target.value }))}
-            placeholder="0"
-            min="0"
-            className="font-thin w-12 p-2 ml-4 mr-1 mt-1 border rounded"
-            style={{ WebkitAppearance: "none", MozAppearance: "textfield" }}
-          />
-          <span className="font-thin">minutes</span>
-          <br />
-          <textarea
-            value={formData.memo}
-            onChange={(e) => setFormData((f) => ({ ...f, memo: e.target.value }))}
-            placeholder="Description"
-            className="font-thin border rounded mx-4 m-1 w-[calc(100%-2rem)] max-w-[500px] px-2 py-1"
-          />
-          <br />
+          {challenge && chartOptions && (
+            <div style={{ height: "400px" }}>
+              <Bar data={chartData} options={chartOptions} />
+            </div>
+          )}
 
-          <div className="mx-4 mb-1 flex items-center gap-2">
-            <label className="cursor-pointer font-thin text-yellow-600 border border-yellow-600 rounded px-2 py-1 text-sm hover:bg-yellow-600 hover:text-white">
-              Photo
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => setFormData((f) => ({ ...f, photo: e.target.files[0] || null }))}
-              />
-            </label>
-            {formData.photo && (
-              <img src={URL.createObjectURL(formData.photo)} alt="thumbnail" className="w-10 h-10 object-cover" />
+          {/* Prizes */}
+          <div className="mx-4 mt-4 mb-8 border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-thin text-base">Prizes</h3>
+              <button
+                onClick={() => setShowPrizeForm(true)}
+                className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-0.5 px-2 border border-yellow-600 hover:border-transparent rounded text-sm"
+              >
+                Add Prize
+              </button>
+            </div>
+            {prizes.length === 0 && (
+              <p className="text-sm font-thin text-gray-400">No prizes yet.</p>
+            )}
+            <ul className="space-y-1">
+              {prizes.map((prize) => (
+                <li key={prize.id} className="flex items-center justify-between text-sm font-thin border-b border-gray-200 pb-1">
+                  <span>
+                    <span className="font-normal">{prize.name}</span>
+                    {prize.description && <span className="text-gray-600"> — {prize.description}</span>}
+                    {prize.username && <span className="text-xs text-gray-400"> by {prize.username}</span>}
+                  </span>
+                  {currentUser?.id === prize.user_id && (
+                    <button
+                      onClick={() => { if (window.confirm("Delete this prize?")) deletePrize.mutate(prize.id) }}
+                      className="text-gray-300 hover:text-red-400 transition-colors ml-2 flex-shrink-0"
+                      title="Delete"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Activity list */}
+        <div className="mx-4 mt-4 mb-8 border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-thin text-sm text-gray-500 uppercase tracking-wide">Activity</h3>
+            {currentUser && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-0.5 px-2 border border-yellow-600 hover:border-transparent rounded text-sm"
+              >
+                Add Activity
+              </button>
             )}
           </div>
-
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saveActivity.isPending}
-            className="mx-4 mb-1 bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-2 px-4 border border-yellow-600 hover:border-transparent rounded disabled:opacity-50"
-          >
-            {saveActivity.isPending ? "Saving..." : "Save"}
-          </button>
-          <hr className="my-1 border-gray-300 mb-2" />
+          <ul className="space-y-2">
+            {(showAllActivities ? activities : activities.slice(0, 20)).map((activity) => (
+              <ActivityItem
+                key={activity.id}
+                activity={activity}
+                onIncrementSus={(aid) => incrementSus.mutate(aid)}
+                onDelete={currentUser?.id === activity.user_id ? handleDeleteActivity : null}
+              />
+            ))}
+          </ul>
+          {activities.length > 20 && !showAllActivities && (
+            <button
+              onClick={() => setShowAllActivities(true)}
+              className="mt-3 text-sm font-thin text-yellow-600 hover:underline"
+            >
+              View all {activities.length} activities
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* FAB */}
+      {currentUser && (
+        <button
+          onClick={() => setShowForm(true)}
+          className="fixed bottom-6 right-6 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full w-14 h-14 text-3xl shadow-lg flex items-center justify-center transition-colors z-40"
+          aria-label="Add Activity"
+        >
+          +
+        </button>
       )}
 
-      <ul>
-        {activities.map((activity) => (
-          <ActivityItem key={activity.id} activity={activity} onIncrementSus={(aid) => incrementSus.mutate(aid)} />
-        ))}
-      </ul>
+      {/* Manage modal */}
+      <Dialog open={showManage} onClose={() => setShowManage(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <Dialog.Title className="text-lg font-light text-gray-800">Manage: {challenge?.name}</Dialog.Title>
+              <button onClick={() => setShowManage(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+            </div>
+
+            <section className="mb-6">
+              <h3 className="text-sm font-thin text-gray-500 uppercase tracking-wide mb-3 border-b border-gray-200 pb-1">Settings</h3>
+              {manageSaveSuccess && <div className="text-green-600 text-sm font-thin mb-2">Saved!</div>}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  updateChallenge.mutate({
+                    name: manageForm.name,
+                    description: manageForm.description,
+                    goal_minutes: manageForm.goal_minutes,
+                    start_date: manageForm.start_date || null,
+                    end_date: manageForm.end_date || null,
+                  })
+                }}
+                className="space-y-3"
+              >
+                <div>
+                  <label className="block text-xs font-thin text-gray-600 mb-1">Name</label>
+                  <input type="text" value={manageForm.name} onChange={(e) => setManageForm((f) => ({ ...f, name: e.target.value }))} className="font-thin border rounded px-2 py-1 w-full text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-thin text-gray-600 mb-1">Description</label>
+                  <textarea value={manageForm.description} onChange={(e) => setManageForm((f) => ({ ...f, description: e.target.value }))} className="font-thin border rounded px-2 py-1 w-full text-sm" rows={2} />
+                </div>
+                <div>
+                  <label className="block text-xs font-thin text-gray-600 mb-1">Goal (minutes)</label>
+                  <input type="number" value={manageForm.goal_minutes} onChange={(e) => setManageForm((f) => ({ ...f, goal_minutes: parseInt(e.target.value) || 0 }))} className="font-thin border rounded px-2 py-1 w-32 text-sm" min="0" />
+                </div>
+                <div className="flex gap-3">
+                  <div>
+                    <label className="block text-xs font-thin text-gray-600 mb-1">Start date</label>
+                    <input type="date" value={manageForm.start_date} onChange={(e) => setManageForm((f) => ({ ...f, start_date: e.target.value }))} className="font-thin border rounded px-2 py-1 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-thin text-gray-600 mb-1">End date</label>
+                    <input type="date" value={manageForm.end_date} onChange={(e) => setManageForm((f) => ({ ...f, end_date: e.target.value }))} className="font-thin border rounded px-2 py-1 text-sm" />
+                  </div>
+                </div>
+                <button type="submit" disabled={updateChallenge.isPending} className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1 px-3 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50">
+                  {updateChallenge.isPending ? "Saving..." : "Save"}
+                </button>
+              </form>
+            </section>
+
+            <section>
+              <h3 className="text-sm font-thin text-gray-500 uppercase tracking-wide mb-3 border-b border-gray-200 pb-1">Members</h3>
+              <ul className="space-y-2 mb-3">
+                {participants.map((p) => (
+                  <li key={p.id} className="flex justify-between items-center text-sm font-thin">
+                    <span>{p.username}</span>
+                    {p.id !== challenge?.admin_user_id && (
+                      <button
+                        onClick={() => removeParticipant.mutate(p.id)}
+                        className="text-red-400 text-xs border border-red-300 rounded px-2 py-0.5 hover:bg-red-500 hover:text-white"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {nonParticipants.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <select value={addUserId} onChange={(e) => setAddUserId(e.target.value)} className="font-thin text-sm border rounded px-2 py-1">
+                    <option value="">Add member...</option>
+                    {nonParticipants.map((u) => (
+                      <option key={u.id} value={u.id}>{u.username}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => { if (addUserId) addParticipant.mutate(addUserId) }}
+                    disabled={addParticipant.isPending}
+                    className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1 px-2 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50"
+                  >
+                    Add
+                  </button>
+                </div>
+              )}
+            </section>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+
+      {/* Add Prize modal */}
+      <Dialog open={showPrizeForm} onClose={() => setShowPrizeForm(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex justify-between items-center mb-4">
+              <Dialog.Title className="text-lg font-light text-gray-800">Add Prize</Dialog.Title>
+              <button onClick={() => setShowPrizeForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+            </div>
+            {tooltip && <div className="text-sm text-red-500 font-thin mb-3">{tooltip}</div>}
+            <div className="space-y-3">
+              <input type="text" value={prizeForm.name} onChange={(e) => setPrizeForm((f) => ({ ...f, name: e.target.value }))} placeholder="Prize name" className="font-thin border rounded px-2 py-1 w-full text-sm" autoFocus />
+              <input type="text" value={prizeForm.description} onChange={(e) => setPrizeForm((f) => ({ ...f, description: e.target.value }))} placeholder="Description" className="font-thin border rounded px-2 py-1 w-full text-sm" />
+              <div className="flex justify-end gap-2 pt-1">
+                <button type="button" onClick={() => setShowPrizeForm(false)} className="font-thin text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
+                <button type="button" onClick={handleAddPrize} disabled={addPrizeMutation.isPending} className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1.5 px-4 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50">
+                  {addPrizeMutation.isPending ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+
+      {/* Add Activity modal */}
+      <Dialog open={showForm} onClose={() => setShowForm(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex justify-between items-center mb-4">
+              <Dialog.Title className="text-lg font-light text-gray-800">Add Activity</Dialog.Title>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+            </div>
+
+            {tooltip && <div className="text-sm text-red-500 font-thin mb-3">{tooltip}</div>}
+
+            <div className="space-y-3">
+              <input type="date" value={formData.date} onChange={(e) => setFormData((f) => ({ ...f, date: e.target.value }))} className="font-thin w-full p-2 border rounded text-sm" />
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={formData.duration}
+                  onChange={(e) => setFormData((f) => ({ ...f, duration: e.target.value }))}
+                  placeholder="0"
+                  min="0"
+                  className="font-thin w-20 p-2 border rounded text-sm"
+                  style={{ WebkitAppearance: "none", MozAppearance: "textfield" }}
+                />
+                <span className="font-thin text-sm text-gray-500">minutes</span>
+              </div>
+
+              <textarea value={formData.memo} onChange={(e) => setFormData((f) => ({ ...f, memo: e.target.value }))} placeholder="Description" rows={2} className="font-thin border rounded w-full px-2 py-1 text-sm" />
+
+              <div className="flex items-center gap-3">
+                <label className="cursor-pointer font-thin text-yellow-600 border border-yellow-600 rounded px-2 py-1 text-sm hover:bg-yellow-600 hover:text-white">
+                  Photo
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => setFormData((f) => ({ ...f, photo: e.target.files[0] || null }))} />
+                </label>
+                {formData.photo && (
+                  <img src={URL.createObjectURL(formData.photo)} alt="thumbnail" className="w-10 h-10 object-cover rounded" />
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-1">
+                <button type="button" onClick={() => setShowForm(false)} className="font-thin text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
+                <button type="button" onClick={handleSave} disabled={saveActivity.isPending} className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1.5 px-4 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50">
+                  {saveActivity.isPending ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </div>
   )
 }

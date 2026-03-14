@@ -32,13 +32,13 @@ app.post("/activities", upload.single('photo'), async (req, res) => {
 
   const d = JSON.parse(req.body.data);
 
-  const { user_id, duration, memo, date, challenge_id } = d;
+  const { user_id, duration, memo, date, challenge_id, lat, lng } = d;
   const photo_path = req.file ? `/${req.file.filename}` : null;
   if (!user_id || !duration || !date) {
       return res.status(400).send("User ID, duration, and date are required.");
   }
   try {
-      const newActivity = await db.addActivity(user_id, duration, date, memo, photo_path, challenge_id || 1);
+      const newActivity = await db.addActivity(user_id, duration, date, memo, photo_path, challenge_id || 1, lat, lng);
       return res.json(newActivity);
   } catch (error) {
       console.error(error);

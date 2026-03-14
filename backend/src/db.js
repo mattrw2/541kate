@@ -160,6 +160,14 @@ dbWrapper
           console.log("Adding challenge_id column to activities");
           await db.run("ALTER TABLE activities ADD COLUMN challenge_id INTEGER DEFAULT 1");
         }
+        if (!existingColumns.includes("lat")) {
+          console.log("Adding lat column to activities");
+          await db.run("ALTER TABLE activities ADD COLUMN lat REAL");
+        }
+        if (!existingColumns.includes("lng")) {
+          console.log("Adding lng column to activities");
+          await db.run("ALTER TABLE activities ADD COLUMN lng REAL");
+        }
 
         console.log("Database is up and running!");
         sqlite3.verbose();
@@ -191,10 +199,10 @@ const deleteUser = async (id) => {
   await db.run("DELETE FROM users WHERE id = ?", [id]);
 };
 
-const addActivity = async (user_id, duration, date, memo = "", photo_path = null, challenge_id = 1) => {
+const addActivity = async (user_id, duration, date, memo = "", photo_path = null, challenge_id = 1, lat = null, lng = null) => {
   const result = await db.run(
-    "INSERT INTO activities (user_id, duration, memo, date, photo_path, challenge_id) VALUES (?, ?, ?, ?, ?, ?)",
-    [user_id, duration, memo, date, photo_path, challenge_id]
+    "INSERT INTO activities (user_id, duration, memo, date, photo_path, challenge_id, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    [user_id, duration, memo, date, photo_path, challenge_id, lat, lng]
   );
   const newActivity = await db.get("SELECT * FROM activities WHERE id = ?", [result.lastID]);
   return newActivity;
@@ -210,13 +218,13 @@ const deleteActivity = async (id) => {
 
 const listActivities = async () => {
   return await db.all(
-    "SELECT a.*, u.username FROM activities a JOIN users u ON a.user_id = u.id WHERE a.IS_ARCHIVED=false order by a.date desc"
+    "SELECT a.*, u.username FROM activities a JOIN users u ON a.user_id = u.id ORDER BY a.date DESC"
   );
 };
 
 const listUsersByDuration = async () => {
   return await db.all(
-    "SELECT users.username, SUM(activities.duration) as total_duration FROM users JOIN activities ON users.id = activities.user_id WHERE activities.IS_ARCHIVED=FALSE GROUP BY users.id ORDER BY users.username DESC"
+    "SELECT users.username, SUM(activities.duration) as total_duration FROM users JOIN activities ON users.id = activities.user_id GROUP BY users.id ORDER BY users.username DESC"
   );
 };
 
@@ -290,7 +298,7 @@ const getChallengeActivities = async (challenge_id) => {
   return await db.all(
     `SELECT a.*, u.username FROM activities a
     JOIN users u ON a.user_id = u.id
-    WHERE a.challenge_id = ? AND (a.IS_ARCHIVED = 0 OR a.IS_ARCHIVED IS NULL)
+    WHERE a.challenge_id = ?
     ORDER BY a.date DESC, a.id DESC`,
     [challenge_id]
   );

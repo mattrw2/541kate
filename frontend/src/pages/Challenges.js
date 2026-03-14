@@ -56,7 +56,7 @@ const Challenges = () => {
             {challenge.description && (
               <p className="text-sm font-thin text-gray-600 mt-1">{challenge.description}</p>
             )}
-            <div className="mt-2 text-xs font-thin text-gray-500 flex gap-4">
+            <div className="mt-2 text-xs font-thin text-gray-500 flex gap-4 flex-wrap">
               {(challenge.start_date || challenge.end_date) && (
                 <span>
                   {formatDate(challenge.start_date)}
@@ -65,6 +65,7 @@ const Challenges = () => {
                 </span>
               )}
               <span>Goal: {challenge.goal_minutes} minutes</span>
+              {challenge.admin_username && <span>Created by {challenge.admin_username}</span>}
             </div>
           </li>
         ))}
