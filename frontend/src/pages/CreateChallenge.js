@@ -15,14 +15,14 @@ const CreateChallenge = () => {
     start_date: "",
     end_date: "",
   })
+  const [photo, setPhoto] = useState(null)
   const [error, setError] = useState(null)
 
   const createChallenge = useMutation({
-    mutationFn: (body) =>
+    mutationFn: (formData) =>
       fetch(`${apiUrl}/challenges`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: formData,
       }).then((r) => {
         if (!r.ok) throw new Error("Failed to create challenge.")
         return r.json()
@@ -43,14 +43,15 @@ const CreateChallenge = () => {
     e.preventDefault()
     if (!form.name) { setError("Name is required."); return }
     setError(null)
-    createChallenge.mutate({
-      name: form.name,
-      description: form.description,
-      goal_minutes: form.goal_minutes,
-      start_date: form.start_date || null,
-      end_date: form.end_date || null,
-      admin_user_id: currentUser.id,
-    })
+    const formData = new FormData()
+    formData.append("name", form.name)
+    formData.append("description", form.description)
+    formData.append("goal_minutes", form.goal_minutes)
+    formData.append("start_date", form.start_date || "")
+    formData.append("end_date", form.end_date || "")
+    formData.append("admin_user_id", currentUser.id)
+    if (photo) formData.append("photo", photo)
+    createChallenge.mutate(formData)
   }
 
   return (
@@ -108,6 +109,16 @@ const CreateChallenge = () => {
             value={form.end_date}
             onChange={(e) => setForm((f) => ({ ...f, end_date: e.target.value }))}
             className="font-thin text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">Photo (optional)</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setPhoto(e.target.files[0] || null)}
+            className="font-thin text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:border file:border-gray-200 file:rounded file:text-xs file:font-thin file:text-gray-600 file:bg-white hover:file:bg-gray-50"
           />
         </div>
 

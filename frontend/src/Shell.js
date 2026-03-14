@@ -141,7 +141,7 @@ const Shell = ({ children }) => {
           )}
         </Disclosure>
 
-        <div className="py-5">
+        <div className="py-2">
           {page && (
             <header>
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -150,7 +150,7 @@ const Shell = ({ children }) => {
             </header>
           )}
           <main>
-            <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 py-5">
+            <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 py-2">
               {children}
             </div>
           </main>

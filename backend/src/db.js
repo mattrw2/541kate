@@ -31,7 +31,7 @@ const createActivityTableSQL =
   "duration INTEGER NOT NULL, memo TEXT, " +
   "date TEXT NOT NULL, photo_path TEXT, sus_count INTEGER DEFAULT 0, IS_ARCHIVED INTEGER DEFAULT 0, challenge_id INTEGER DEFAULT 1, FOREIGN KEY(user_id) REFERENCES users(id))";
 const createChallengesTableSQL =
-  "CREATE TABLE challenges (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT, goal_minutes INTEGER DEFAULT 600, start_date TEXT, end_date TEXT, admin_user_id INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(admin_user_id) REFERENCES users(id))";
+  "CREATE TABLE challenges (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT, goal_minutes INTEGER DEFAULT 600, start_date TEXT, end_date TEXT, admin_user_id INTEGER, photo_path TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(admin_user_id) REFERENCES users(id))";
 const createChallengeParticipantsTableSQL =
   "CREATE TABLE challenge_participants (id INTEGER PRIMARY KEY AUTOINCREMENT, challenge_id INTEGER NOT NULL, user_id INTEGER NOT NULL, UNIQUE(challenge_id, user_id), FOREIGN KEY(challenge_id) REFERENCES challenges(id), FOREIGN KEY(user_id) REFERENCES users(id))";
 const createPrizesTableSQL =
@@ -121,6 +121,13 @@ dbWrapper
         if (!existingTableNames.includes("prizes")) {
           console.log("Creating prizes table");
           await db.run(createPrizesTableSQL);
+        }
+
+        // Check and add photo_path to challenges
+        const challengeColumns = await db.all("PRAGMA table_info(challenges)");
+        if (!challengeColumns.map((c) => c.name).includes("photo_path")) {
+          console.log("Adding photo_path column to challenges");
+          await db.run("ALTER TABLE challenges ADD COLUMN photo_path TEXT");
         }
 
         // Check and create activity_comments table
@@ -262,10 +269,10 @@ const getChallenge = async (id) => {
   );
 };
 
-const createChallenge = async (name, description, goal_minutes, start_date, end_date, admin_user_id) => {
+const createChallenge = async (name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path = null) => {
   const result = await db.run(
-    "INSERT INTO challenges (name, description, goal_minutes, start_date, end_date, admin_user_id) VALUES (?, ?, ?, ?, ?, ?)",
-    [name, description, goal_minutes, start_date, end_date, admin_user_id]
+    "INSERT INTO challenges (name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path]
   );
   // Auto-add admin as participant
   await db.run(
@@ -275,11 +282,18 @@ const createChallenge = async (name, description, goal_minutes, start_date, end_
   return await getChallenge(result.lastID);
 };
 
-const updateChallenge = async (id, name, description, goal_minutes, start_date, end_date) => {
-  await db.run(
-    "UPDATE challenges SET name = ?, description = ?, goal_minutes = ?, start_date = ?, end_date = ? WHERE id = ?",
-    [name, description, goal_minutes, start_date, end_date, id]
-  );
+const updateChallenge = async (id, name, description, goal_minutes, start_date, end_date, photo_path) => {
+  if (photo_path !== undefined) {
+    await db.run(
+      "UPDATE challenges SET name = ?, description = ?, goal_minutes = ?, start_date = ?, end_date = ?, photo_path = ? WHERE id = ?",
+      [name, description, goal_minutes, start_date, end_date, photo_path, id]
+    );
+  } else {
+    await db.run(
+      "UPDATE challenges SET name = ?, description = ?, goal_minutes = ?, start_date = ?, end_date = ? WHERE id = ?",
+      [name, description, goal_minutes, start_date, end_date, id]
+    );
+  }
   return await getChallenge(id);
 };
 

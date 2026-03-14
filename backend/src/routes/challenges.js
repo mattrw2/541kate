@@ -1,5 +1,13 @@
 const express = require("express");
 const db = require("../db");
+const multer = require("multer");
+const path = require("path");
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, path.join(__dirname, "../../database/uploads/")),
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
+});
+const upload = multer({ storage });
 
 const router = express.Router();
 
@@ -15,13 +23,14 @@ router.get("/", async (req, res) => {
 });
 
 // POST / - create a challenge
-router.post("/", async (req, res) => {
+router.post("/", upload.single("photo"), async (req, res) => {
   const { name, description, goal_minutes, start_date, end_date, admin_user_id } = req.body;
   if (!name) {
     return res.status(400).send("Name is required.");
   }
+  const photo_path = req.file ? `/${req.file.filename}` : null;
   try {
-    const challenge = await db.createChallenge(name, description, goal_minutes, start_date, end_date, admin_user_id);
+    const challenge = await db.createChallenge(name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path);
     return res.json(challenge);
   } catch (error) {
     console.error(error);
@@ -45,11 +54,12 @@ router.get("/:id", async (req, res) => {
 });
 
 // PUT /:id - update a challenge
-router.put("/:id", async (req, res) => {
+router.put("/:id", upload.single("photo"), async (req, res) => {
   const { id } = req.params;
   const { name, description, goal_minutes, start_date, end_date } = req.body;
+  const photo_path = req.file ? `/${req.file.filename}` : undefined;
   try {
-    const challenge = await db.updateChallenge(id, name, description, goal_minutes, start_date, end_date);
+    const challenge = await db.updateChallenge(id, name, description, goal_minutes, start_date, end_date, photo_path);
     return res.json(challenge);
   } catch (error) {
     console.error(error);

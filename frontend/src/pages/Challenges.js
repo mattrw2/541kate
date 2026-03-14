@@ -46,9 +46,6 @@ const Challenges = () => {
               >
                 {challenge.name}
               </Link>
-              <span className="text-xs font-thin text-gray-400">
-                {challenge.participant_count} member{challenge.participant_count !== 1 ? "s" : ""}
-              </span>
             </div>
             {challenge.description && (
               <p className="text-sm font-thin text-gray-600 mt-1">{challenge.description}</p>

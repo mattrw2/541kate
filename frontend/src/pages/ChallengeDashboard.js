@@ -172,16 +172,6 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
             <div key={c.id} className="text-xs text-gray-600 border-l-2 border-yellow-200 pl-2">
               <span className="font-medium text-gray-700">{c.username || "Anonymous"}</span>
               <span className="ml-1">{c.text}</span>
-              {c.lat != null && c.lng != null && (
-                <a
-                  href={`https://www.google.com/maps?q=${c.lat},${c.lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-1 text-gray-400 hover:text-yellow-500"
-                >
-                  📍 {c.lat.toFixed(4)}, {c.lng.toFixed(4)}
-                </a>
-              )}
             </div>
           ))}
           {currentUser && (
@@ -258,6 +248,7 @@ const ChallengeDashboard = () => {
   const [showShare, setShowShare] = useState(false)
   const [copied, setCopied] = useState(false)
   const [manageForm, setManageForm] = useState({ name: "", description: "", goal_minutes: 600, start_date: "", end_date: "" })
+  const [managePhoto, setManagePhoto] = useState(null)
   const [manageSaveSuccess, setManageSaveSuccess] = useState(false)
   const [addUserId, setAddUserId] = useState("")
 
@@ -340,11 +331,10 @@ const ChallengeDashboard = () => {
   })
 
   const updateChallenge = useMutation({
-    mutationFn: (body) =>
+    mutationFn: (formData) =>
       fetch(`${apiUrl}/challenges/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: formData,
       }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id] })
@@ -439,24 +429,18 @@ const ChallengeDashboard = () => {
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Full-width header */}
-      <header className="relative">
-        <div
-          className="bg-gray-200"
-          style={{ background: "url('/IMG_1096.jpg') left/cover", width: "100%", height: "150px" }}
-        />
-        <div className="absolute top-0 right-0 p-4 text-white font-bold text-2xl drop-shadow">
-          {challenge?.name || ""}
-        </div>
-        <div className="absolute top-10 right-5 p-4">
-          <img src="/jogging.png" className="w-20 h-20" alt="jogging" />
-        </div>
-      </header>
-
-      <div>
+<div>
         <div>
           {challenge && (
-            <div className="mx-4 mt-3 border border-gray-200 rounded-lg p-4">
+            <div className="mx-4 mt-3 border border-gray-200 rounded-lg overflow-hidden">
+              {challenge.photo_path && (
+                <img
+                  src={`${apiUrl}${challenge.photo_path}`}
+                  alt={challenge.name}
+                  className="w-full h-48 object-cover"
+                />
+              )}
+              <div className="p-4">
               <div className="flex items-center justify-between mb-1">
                 <p className="font-semibold text-base text-gray-800">{challenge.name}</p>
                 <div className="flex gap-1.5">
@@ -491,11 +475,12 @@ const ChallengeDashboard = () => {
                 <span>Goal: {challenge.goal_minutes} min</span>
                 {challenge.admin_username && <span>by {challenge.admin_username}</span>}
               </div>
+              </div>
             </div>
           )}
 
           {challenge && chartOptions && (
-            <div style={{ height: "400px" }}>
+            <div className="mx-4 mt-3 border border-gray-200 rounded-lg p-4" style={{ height: "400px" }}>
               <Bar data={chartData} options={chartOptions} />
             </div>
           )}
@@ -626,13 +611,14 @@ const ChallengeDashboard = () => {
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
-                  updateChallenge.mutate({
-                    name: manageForm.name,
-                    description: manageForm.description,
-                    goal_minutes: manageForm.goal_minutes,
-                    start_date: manageForm.start_date || null,
-                    end_date: manageForm.end_date || null,
-                  })
+                  const fd = new FormData()
+                  fd.append("name", manageForm.name)
+                  fd.append("description", manageForm.description)
+                  fd.append("goal_minutes", manageForm.goal_minutes)
+                  fd.append("start_date", manageForm.start_date || "")
+                  fd.append("end_date", manageForm.end_date || "")
+                  if (managePhoto) fd.append("photo", managePhoto)
+                  updateChallenge.mutate(fd)
                 }}
                 className="space-y-4"
               >
@@ -655,6 +641,15 @@ const ChallengeDashboard = () => {
                 <div>
                   <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">End date</label>
                   <input type="date" value={manageForm.end_date} onChange={(e) => setManageForm((f) => ({ ...f, end_date: e.target.value }))} className="font-thin text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">Photo (optional)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setManagePhoto(e.target.files[0] || null)}
+                    className="font-thin text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:border file:border-gray-200 file:rounded file:text-xs file:font-thin file:text-gray-600 file:bg-white hover:file:bg-gray-50"
+                  />
                 </div>
                 <button type="submit" disabled={updateChallenge.isPending} className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1.5 px-4 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50">
                   {updateChallenge.isPending ? "Saving..." : "Save"}
@@ -705,17 +700,31 @@ const ChallengeDashboard = () => {
             <div className="space-y-3">
               <input type="date" value={formData.date} onChange={(e) => setFormData((f) => ({ ...f, date: e.target.value }))} className="font-thin w-full p-2 border rounded text-sm" />
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={formData.duration}
-                  onChange={(e) => setFormData((f) => ({ ...f, duration: e.target.value }))}
-                  placeholder="0"
-                  min="0"
-                  className="font-thin w-20 p-2 border rounded text-sm"
-                  style={{ WebkitAppearance: "none", MozAppearance: "textfield" }}
-                />
-                <span className="font-thin text-sm text-gray-500">minutes</span>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  {[5, 10, 30, 60].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setFormData((f) => ({ ...f, duration: String(m) }))}
+                      className={`font-thin text-xs rounded px-3 py-1.5 border ${parseInt(formData.duration) === m ? "bg-yellow-600 text-white border-yellow-600" : "text-yellow-600 border-yellow-600 hover:bg-yellow-600 hover:text-white"}`}
+                    >
+                      {m}m
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={formData.duration}
+                    onChange={(e) => setFormData((f) => ({ ...f, duration: e.target.value }))}
+                    placeholder="0"
+                    min="0"
+                    className="font-thin w-20 p-2 border rounded text-sm"
+                    style={{ WebkitAppearance: "none", MozAppearance: "textfield" }}
+                  />
+                  <span className="font-thin text-sm text-gray-500">minutes</span>
+                </div>
               </div>
 
               <textarea value={formData.memo} onChange={(e) => setFormData((f) => ({ ...f, memo: e.target.value }))} placeholder="Description" rows={2} className="font-thin border rounded w-full px-2 py-1 text-sm" />
