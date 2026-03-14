@@ -2,8 +2,16 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { UserProvider } from './UserContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-    <App />
+  <QueryClientProvider client={queryClient}>
+    <UserProvider>
+      <App />
+    </UserProvider>
+  </QueryClientProvider>
 );

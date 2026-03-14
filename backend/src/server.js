@@ -32,13 +32,13 @@ app.post("/activities", upload.single('photo'), async (req, res) => {
 
   const d = JSON.parse(req.body.data);
 
-  const { user_id, duration, memo, date } = d;
+  const { user_id, duration, memo, date, challenge_id, lat, lng } = d;
   const photo_path = req.file ? `/${req.file.filename}` : null;
   if (!user_id || !duration || !date) {
       return res.status(400).send("User ID, duration, and date are required.");
   }
   try {
-      const newActivity = await db.addActivity(user_id, duration, date, memo, photo_path);
+      const newActivity = await db.addActivity(user_id, duration, date, memo, photo_path, challenge_id || 1, lat, lng);
       return res.json(newActivity);
   } catch (error) {
       console.error(error);
@@ -57,8 +57,10 @@ const server = app.listen(APP_PORT, function () {
 // Add in our routes
 const usersRouter = require("./routes/users");
 const activitiesRouter = require("./routes/activities");
+const challengesRouter = require("./routes/challenges");
 app.use("/users", usersRouter);
 app.use("/activities", activitiesRouter);
+app.use("/challenges", challengesRouter);
 
 
 /* Add in some basic error handling so our server doesn't crash if we run into
