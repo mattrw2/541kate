@@ -1,8 +1,10 @@
 import { Disclosure } from "@headlessui/react";
-import React, { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
-import { useLocation } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
+import { useCurrentUser } from "./UserContext";
+import { apiUrl } from "./api";
 
 const navigation = [
   { name: "Take a quiz", href: "/quizzes", pageName: "Quizzes" },
@@ -13,7 +15,7 @@ const navigation = [
     href: "/rent-a-backpacker",
     pageName: "Rent a backpacker",
   },
-  { name: "Sweat-ers", href: "/chart", pageName: "" },
+  { name: "Challenges", href: "/challenges", pageName: "" },
 ];
 
 const Shell = ({ children }) => {
@@ -22,6 +24,11 @@ const Shell = ({ children }) => {
   }
 
   const [page, setPage] = useState(null);
+  const { currentUser, setCurrentUser } = useCurrentUser();
+  const { data: users = [] } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => fetch(`${apiUrl}/users`).then((r) => r.json()),
+  });
 
   const location = useLocation();
   const currentPath = location.pathname;
@@ -35,10 +42,34 @@ const Shell = ({ children }) => {
     const page = navigation.find((page) => page.href === currentPath);
 
     if (page) {
-
       setPage(page.pageName);
     }
   }, [currentPath]);
+
+  const handleUserChange = (e) => {
+    const selectedId = parseInt(e.target.value);
+    if (!selectedId) {
+      setCurrentUser(null);
+      return;
+    }
+    const user = users.find((u) => u.id === selectedId);
+    if (user) setCurrentUser(user);
+  };
+
+  const userSelect = (
+    <select
+      value={currentUser?.id || ""}
+      onChange={handleUserChange}
+      className="font-thin text-sm border rounded px-2 py-1"
+    >
+      <option value="">Who are you?</option>
+      {users.map((u) => (
+        <option key={u.id} value={u.id}>
+          {u.username}
+        </option>
+      ))}
+    </select>
+  );
 
   return (
     <>
@@ -71,6 +102,9 @@ const Shell = ({ children }) => {
                         </Link>
                       ))}
                     </div>
+                  </div>
+                  <div className="hidden sm:flex sm:items-center">
+                    {userSelect}
                   </div>
                   <div className="-mr-2 flex items-center sm:hidden">
                     {/* Mobile menu button */}
@@ -110,6 +144,9 @@ const Shell = ({ children }) => {
                       {item.name}
                     </Disclosure.Button>
                   ))}
+                  <div className="px-4 py-2">
+                    {userSelect}
+                  </div>
                 </div>
               </Disclosure.Panel>
             </>

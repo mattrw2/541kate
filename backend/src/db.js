@@ -15,7 +15,6 @@ const initial_users = data.map((activities) => {
   return { id: activities.user_id, username: activities.username };
 }).filter((user, index, self) => self.findIndex((t) => t.id === user.id) === index).sort((a, b) => a.id - b.id);
 
-
 const initial_activities = data.map((activity) => {
   return {
     user_id: activity.user_id,
@@ -25,13 +24,18 @@ const initial_activities = data.map((activity) => {
   };
 });
 
-
 const createUsersTableSQL =
   "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE)";
 const createActivityTableSQL =
   "CREATE TABLE activities (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, " +
   "duration INTEGER NOT NULL, memo TEXT, " +
-  "date TEXT NOT NULL, FOREIGN KEY(user_id) REFERENCES users(id))";
+  "date TEXT NOT NULL, photo_path TEXT, sus_count INTEGER DEFAULT 0, IS_ARCHIVED INTEGER DEFAULT 0, challenge_id INTEGER DEFAULT 1, FOREIGN KEY(user_id) REFERENCES users(id))";
+const createChallengesTableSQL =
+  "CREATE TABLE challenges (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT, goal_minutes INTEGER DEFAULT 600, start_date TEXT, end_date TEXT, admin_user_id INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(admin_user_id) REFERENCES users(id))";
+const createChallengeParticipantsTableSQL =
+  "CREATE TABLE challenge_participants (id INTEGER PRIMARY KEY AUTOINCREMENT, challenge_id INTEGER NOT NULL, user_id INTEGER NOT NULL, UNIQUE(challenge_id, user_id), FOREIGN KEY(challenge_id) REFERENCES challenges(id), FOREIGN KEY(user_id) REFERENCES users(id))";
+const createPrizesTableSQL =
+  "CREATE TABLE prizes (id INTEGER PRIMARY KEY AUTOINCREMENT, challenge_id INTEGER NOT NULL, name TEXT NOT NULL, description TEXT, user_id INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(challenge_id) REFERENCES challenges(id), FOREIGN KEY(user_id) REFERENCES users(id))";
 
 dbWrapper
   .open({ filename: databaseFile, driver: sqlite3.Database })
@@ -42,35 +46,121 @@ dbWrapper
         await db.run("PRAGMA foreign_keys = ON");
         await db.run(createUsersTableSQL);
         await db.run(createActivityTableSQL);
+        await db.run(createChallengesTableSQL);
+        await db.run(createChallengeParticipantsTableSQL);
+        await db.run(createPrizesTableSQL);
+
         for (const user of initial_users) {
           await db.run("INSERT INTO users (username) VALUES (?)", [
             user.username,
           ]);
         }
+
+        // Seed challenge 1 with first user as admin
+        const firstUser = await db.get("SELECT * FROM users LIMIT 1");
+        await db.run(
+          "INSERT INTO challenges (name, description, goal_minutes, admin_user_id) VALUES (?, ?, ?, ?)",
+          ["Christmas Sweaters", "Christmas Sweaters challenge", 600, firstUser.id]
+        );
+
+        // Add all users as participants of challenge 1
+        const allUsers = await db.all("SELECT * FROM users");
+        for (const user of allUsers) {
+          await db.run(
+            "INSERT OR IGNORE INTO challenge_participants (challenge_id, user_id) VALUES (?, ?)",
+            [1, user.id]
+          );
+        }
+
         for (const activity of initial_activities) {
           await db.run(
-            "INSERT INTO activities (user_id, duration, memo, date) VALUES (?, ?, ?, ?)",
-            [activity.user_id, activity.duration, activity.memo, activity.date]
+            "INSERT INTO activities (user_id, duration, memo, date, challenge_id) VALUES (?, ?, ?, ?, ?)",
+            [activity.user_id, activity.duration, activity.memo, activity.date, 1]
           );
         }
       } else {
-
         // Avoids a rare bug where the database gets created, but the tables don't
         const tableNames = await db.all(
           "SELECT name FROM sqlite_master WHERE type='table'"
         );
+        const existingTableNames = tableNames.map((t) => t.name);
+
         const tableNamesToCreationSQL = {
           users: createUsersTableSQL,
-        activities: createActivityTableSQL,
+          activities: createActivityTableSQL,
         };
         for (const [tableName, creationSQL] of Object.entries(
           tableNamesToCreationSQL
         )) {
-          if (!tableNames.some((table) => table.name === tableName)) {
+          if (!existingTableNames.includes(tableName)) {
             console.log(`Creating ${tableName} table`);
             await db.run(creationSQL);
           }
         }
+
+        // Check and create challenges table
+        let challengesCreated = false;
+        if (!existingTableNames.includes("challenges")) {
+          console.log("Creating challenges table");
+          await db.run(createChallengesTableSQL);
+          challengesCreated = true;
+        }
+
+        // Check and create challenge_participants table
+        let participantsCreated = false;
+        if (!existingTableNames.includes("challenge_participants")) {
+          console.log("Creating challenge_participants table");
+          await db.run(createChallengeParticipantsTableSQL);
+          participantsCreated = true;
+        }
+
+        // Check and create prizes table
+        if (!existingTableNames.includes("prizes")) {
+          console.log("Creating prizes table");
+          await db.run(createPrizesTableSQL);
+        }
+
+        // Seed challenge 1 if challenges table was just created
+        if (challengesCreated) {
+          const firstUser = await db.get("SELECT * FROM users LIMIT 1");
+          await db.run(
+            "INSERT INTO challenges (name, description, goal_minutes, admin_user_id) VALUES (?, ?, ?, ?)",
+            ["Christmas Sweaters", "Christmas Sweaters challenge", 600, firstUser ? firstUser.id : null]
+          );
+        }
+
+        // Add all users as participants of challenge 1 if participants table was just created
+        if (participantsCreated) {
+          const allUsers = await db.all("SELECT * FROM users");
+          for (const user of allUsers) {
+            await db.run(
+              "INSERT OR IGNORE INTO challenge_participants (challenge_id, user_id) VALUES (?, ?)",
+              [1, user.id]
+            );
+          }
+        }
+
+        // Check and ALTER TABLE activities to add missing columns
+        const activityColumns = await db.all("PRAGMA table_info(activities)");
+        const existingColumns = activityColumns.map((c) => c.name);
+
+        if (!existingColumns.includes("photo_path")) {
+          console.log("Adding photo_path column to activities");
+          await db.run("ALTER TABLE activities ADD COLUMN photo_path TEXT");
+        }
+        if (!existingColumns.includes("sus_count")) {
+          console.log("Adding sus_count column to activities");
+          await db.run("ALTER TABLE activities ADD COLUMN sus_count INTEGER DEFAULT 0");
+        }
+        if (!existingColumns.includes("IS_ARCHIVED")) {
+          console.log("Adding IS_ARCHIVED column to activities");
+          await db.run("ALTER TABLE activities ADD COLUMN IS_ARCHIVED INTEGER DEFAULT 0");
+        }
+        if (!existingColumns.includes("challenge_id")) {
+          console.log("Adding challenge_id column to activities");
+          await db.run("ALTER TABLE activities ADD COLUMN challenge_id INTEGER DEFAULT 1");
+        }
+
         console.log("Database is up and running!");
         sqlite3.verbose();
       }
@@ -83,50 +173,190 @@ const getUsers = async () => {
   return await db.all("SELECT * FROM users order by username");
 };
 
+const getUserById = async (id) => {
+  return await db.get("SELECT * FROM users WHERE id = ?", [id]);
+};
+
 const runMigration = async (migration) => {
   await db.run(migration);
-}
+};
 
 const addUser = async (username) => {
-  const result =  await db.run("INSERT INTO users (username) VALUES (?)", [username]);
+  const result = await db.run("INSERT INTO users (username) VALUES (?)", [username]);
   const newUser = await db.get("SELECT * FROM users WHERE id = ?", [result.lastID]);
   return newUser;
 };
 
 const deleteUser = async (id) => {
   await db.run("DELETE FROM users WHERE id = ?", [id]);
-}
+};
 
-const addActivity = async (user_id, duration, date, memo="", photo_path=null) => {
-    const result = await db.run("INSERT INTO activities (user_id, duration, memo, date, photo_path) VALUES (?, ?, ?, ?, ?)", [user_id, duration, memo, date, photo_path]);
-    const newActivity = await db.get("SELECT * FROM activities WHERE id = ?", [result.lastID]);
-    return newActivity;
-}
+const addActivity = async (user_id, duration, date, memo = "", photo_path = null, challenge_id = 1) => {
+  const result = await db.run(
+    "INSERT INTO activities (user_id, duration, memo, date, photo_path, challenge_id) VALUES (?, ?, ?, ?, ?, ?)",
+    [user_id, duration, memo, date, photo_path, challenge_id]
+  );
+  const newActivity = await db.get("SELECT * FROM activities WHERE id = ?", [result.lastID]);
+  return newActivity;
+};
 
 const incrementSusCount = async (id) => {
-    await db.run("UPDATE activities SET sus_count = sus_count + 1 WHERE id = ?", [id]);
-} 
+  await db.run("UPDATE activities SET sus_count = sus_count + 1 WHERE id = ?", [id]);
+};
 
 const deleteActivity = async (id) => {
-    await db.run("DELETE FROM activities WHERE id = ?", [id]);
-}
+  await db.run("DELETE FROM activities WHERE id = ?", [id]);
+};
 
 const listActivities = async () => {
-    return await db.all("SELECT a.*, u.username FROM activities a JOIN users u ON a.user_id = u.id WHERE a.IS_ARCHIVED=false order by a.date desc");
+  return await db.all(
+    "SELECT a.*, u.username FROM activities a JOIN users u ON a.user_id = u.id WHERE a.IS_ARCHIVED=false order by a.date desc"
+  );
 };
 
 const listUsersByDuration = async () => {
-    return await db.all("SELECT users.username, SUM(activities.duration) as total_duration FROM users JOIN activities ON users.id = activities.user_id WHERE activities.IS_ARCHIVED=FALSE GROUP BY users.id ORDER BY users.username DESC");
+  return await db.all(
+    "SELECT users.username, SUM(activities.duration) as total_duration FROM users JOIN activities ON users.id = activities.user_id WHERE activities.IS_ARCHIVED=FALSE GROUP BY users.id ORDER BY users.username DESC"
+  );
+};
+
+// Challenge functions
+const getChallenges = async () => {
+  return await db.all(
+    `SELECT c.*, u.username as admin_username,
+      (SELECT COUNT(*) FROM challenge_participants cp WHERE cp.challenge_id = c.id) as participant_count
+    FROM challenges c
+    LEFT JOIN users u ON c.admin_user_id = u.id
+    ORDER BY c.created_at DESC`
+  );
+};
+
+const getChallenge = async (id) => {
+  return await db.get(
+    `SELECT c.*, u.username as admin_username
+    FROM challenges c
+    LEFT JOIN users u ON c.admin_user_id = u.id
+    WHERE c.id = ?`,
+    [id]
+  );
+};
+
+const createChallenge = async (name, description, goal_minutes, start_date, end_date, admin_user_id) => {
+  const result = await db.run(
+    "INSERT INTO challenges (name, description, goal_minutes, start_date, end_date, admin_user_id) VALUES (?, ?, ?, ?, ?, ?)",
+    [name, description, goal_minutes, start_date, end_date, admin_user_id]
+  );
+  // Auto-add admin as participant
+  await db.run(
+    "INSERT OR IGNORE INTO challenge_participants (challenge_id, user_id) VALUES (?, ?)",
+    [result.lastID, admin_user_id]
+  );
+  return await getChallenge(result.lastID);
+};
+
+const updateChallenge = async (id, name, description, goal_minutes, start_date, end_date) => {
+  await db.run(
+    "UPDATE challenges SET name = ?, description = ?, goal_minutes = ?, start_date = ?, end_date = ? WHERE id = ?",
+    [name, description, goal_minutes, start_date, end_date, id]
+  );
+  return await getChallenge(id);
+};
+
+const getChallengeParticipants = async (challenge_id) => {
+  return await db.all(
+    `SELECT u.* FROM challenge_participants cp
+    JOIN users u ON cp.user_id = u.id
+    WHERE cp.challenge_id = ?
+    ORDER BY u.username`,
+    [challenge_id]
+  );
+};
+
+const addChallengeParticipant = async (challenge_id, user_id) => {
+  await db.run(
+    "INSERT OR IGNORE INTO challenge_participants (challenge_id, user_id) VALUES (?, ?)",
+    [challenge_id, user_id]
+  );
+};
+
+const removeChallengeParticipant = async (challenge_id, user_id) => {
+  await db.run(
+    "DELETE FROM challenge_participants WHERE challenge_id = ? AND user_id = ?",
+    [challenge_id, user_id]
+  );
+};
+
+const getChallengeActivities = async (challenge_id) => {
+  return await db.all(
+    `SELECT a.*, u.username FROM activities a
+    JOIN users u ON a.user_id = u.id
+    WHERE a.challenge_id = ? AND (a.IS_ARCHIVED = 0 OR a.IS_ARCHIVED IS NULL)
+    ORDER BY a.date DESC, a.id DESC`,
+    [challenge_id]
+  );
+};
+
+const getChallengeDuration = async (challenge_id) => {
+  return await db.all(
+    `SELECT u.id, u.username, COALESCE(SUM(a.duration), 0) as total_duration
+    FROM challenge_participants cp
+    JOIN users u ON cp.user_id = u.id
+    LEFT JOIN activities a ON a.user_id = u.id AND a.challenge_id = ?
+    WHERE cp.challenge_id = ?
+    GROUP BY u.id, u.username
+    ORDER BY total_duration DESC`,
+    [challenge_id, challenge_id]
+  );
+};
+
+const getPrizes = async (challenge_id) => {
+  return await db.all(
+    `SELECT p.*, u.username FROM prizes p
+    LEFT JOIN users u ON p.user_id = u.id
+    WHERE p.challenge_id = ?
+    ORDER BY p.created_at DESC`,
+    [challenge_id]
+  );
+};
+
+const addPrize = async (challenge_id, name, description, user_id) => {
+  const result = await db.run(
+    "INSERT INTO prizes (challenge_id, name, description, user_id) VALUES (?, ?, ?, ?)",
+    [challenge_id, name, description, user_id]
+  );
+  return await db.get(
+    `SELECT p.*, u.username FROM prizes p
+    LEFT JOIN users u ON p.user_id = u.id
+    WHERE p.id = ?`,
+    [result.lastID]
+  );
+};
+
+const deletePrize = async (id) => {
+  await db.run("DELETE FROM prizes WHERE id = ?", [id]);
 };
 
 module.exports = {
-    getUsers,
-    listActivities,
-    addUser,
-    listUsersByDuration,
-    addActivity,
-    deleteActivity,
-    deleteUser,
-    runMigration,
-    incrementSusCount,
+  getUsers,
+  getUserById,
+  listActivities,
+  addUser,
+  listUsersByDuration,
+  addActivity,
+  deleteActivity,
+  deleteUser,
+  runMigration,
+  incrementSusCount,
+  getChallenges,
+  getChallenge,
+  createChallenge,
+  updateChallenge,
+  getChallengeParticipants,
+  addChallengeParticipant,
+  removeChallengeParticipant,
+  getChallengeActivities,
+  getChallengeDuration,
+  getPrizes,
+  addPrize,
+  deletePrize,
 };
