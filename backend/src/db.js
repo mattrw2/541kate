@@ -36,6 +36,8 @@ const createChallengeParticipantsTableSQL =
   "CREATE TABLE challenge_participants (id INTEGER PRIMARY KEY AUTOINCREMENT, challenge_id INTEGER NOT NULL, user_id INTEGER NOT NULL, UNIQUE(challenge_id, user_id), FOREIGN KEY(challenge_id) REFERENCES challenges(id), FOREIGN KEY(user_id) REFERENCES users(id))";
 const createPrizesTableSQL =
   "CREATE TABLE prizes (id INTEGER PRIMARY KEY AUTOINCREMENT, challenge_id INTEGER NOT NULL, name TEXT NOT NULL, description TEXT, user_id INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(challenge_id) REFERENCES challenges(id), FOREIGN KEY(user_id) REFERENCES users(id))";
+const createActivityCommentsTableSQL =
+  "CREATE TABLE activity_comments (id INTEGER PRIMARY KEY AUTOINCREMENT, activity_id INTEGER NOT NULL, user_id INTEGER, text TEXT NOT NULL, lat REAL, lng REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(activity_id) REFERENCES activities(id), FOREIGN KEY(user_id) REFERENCES users(id))";
 
 dbWrapper
   .open({ filename: databaseFile, driver: sqlite3.Database })
@@ -49,6 +51,7 @@ dbWrapper
         await db.run(createChallengesTableSQL);
         await db.run(createChallengeParticipantsTableSQL);
         await db.run(createPrizesTableSQL);
+        await db.run(createActivityCommentsTableSQL);
 
         for (const user of initial_users) {
           await db.run("INSERT INTO users (username) VALUES (?)", [
@@ -118,6 +121,12 @@ dbWrapper
         if (!existingTableNames.includes("prizes")) {
           console.log("Creating prizes table");
           await db.run(createPrizesTableSQL);
+        }
+
+        // Check and create activity_comments table
+        if (!existingTableNames.includes("activity_comments")) {
+          console.log("Creating activity_comments table");
+          await db.run(createActivityCommentsTableSQL);
         }
 
         // Seed challenge 1 if challenges table was just created
@@ -210,6 +219,10 @@ const addActivity = async (user_id, duration, date, memo = "", photo_path = null
 
 const incrementSusCount = async (id) => {
   await db.run("UPDATE activities SET sus_count = sus_count + 1 WHERE id = ?", [id]);
+};
+
+const decrementSusCount = async (id) => {
+  await db.run("UPDATE activities SET sus_count = MAX(0, sus_count - 1) WHERE id = ?", [id]);
 };
 
 const deleteActivity = async (id) => {
@@ -344,6 +357,29 @@ const deletePrize = async (id) => {
   await db.run("DELETE FROM prizes WHERE id = ?", [id]);
 };
 
+const getActivityComments = async (activity_id) => {
+  return await db.all(
+    `SELECT c.*, u.username FROM activity_comments c
+    LEFT JOIN users u ON c.user_id = u.id
+    WHERE c.activity_id = ?
+    ORDER BY c.created_at ASC`,
+    [activity_id]
+  );
+};
+
+const addActivityComment = async (activity_id, user_id, text, lat, lng) => {
+  const result = await db.run(
+    "INSERT INTO activity_comments (activity_id, user_id, text, lat, lng) VALUES (?, ?, ?, ?, ?)",
+    [activity_id, user_id, text, lat, lng]
+  );
+  return await db.get(
+    `SELECT c.*, u.username FROM activity_comments c
+    LEFT JOIN users u ON c.user_id = u.id
+    WHERE c.id = ?`,
+    [result.lastID]
+  );
+};
+
 module.exports = {
   getUsers,
   getUserById,
@@ -355,6 +391,7 @@ module.exports = {
   deleteUser,
   runMigration,
   incrementSusCount,
+  decrementSusCount,
   getChallenges,
   getChallenge,
   createChallenge,
@@ -367,4 +404,6 @@ module.exports = {
   getPrizes,
   addPrize,
   deletePrize,
+  getActivityComments,
+  addActivityComment,
 };

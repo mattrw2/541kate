@@ -21,7 +21,7 @@ const Challenges = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4">
+    <div className="max-w-3xl mx-auto px-4">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-thin">Challenges</h2>
         {currentUser ? (
@@ -32,31 +32,28 @@ const Challenges = () => {
             New Challenge
           </Link>
         ) : (
-          <span className="text-sm text-gray-500 font-thin">Select a user to create challenges.</span>
+          <span className="text-sm text-gray-400 font-thin">Select a user to create challenges.</span>
         )}
       </div>
 
-      <ul className="space-y-4">
+      <ul className="space-y-3">
         {challenges.map((challenge) => (
-          <li
-            key={challenge.id}
-            className="border border-yellow-600 rounded p-4"
-          >
+          <li key={challenge.id} className="border border-gray-200 rounded-lg p-4">
             <div className="flex justify-between items-start">
               <Link
                 to={`/challenge/${challenge.id}`}
-                className="text-lg font-thin text-yellow-600 hover:underline"
+                className="text-lg font-semibold text-yellow-700 hover:underline"
               >
                 {challenge.name}
               </Link>
-              <span className="text-sm font-thin text-gray-500">
+              <span className="text-xs font-thin text-gray-400">
                 {challenge.participant_count} member{challenge.participant_count !== 1 ? "s" : ""}
               </span>
             </div>
             {challenge.description && (
               <p className="text-sm font-thin text-gray-600 mt-1">{challenge.description}</p>
             )}
-            <div className="mt-2 text-xs font-thin text-gray-500 flex gap-4 flex-wrap">
+            <div className="mt-2 text-xs font-thin text-gray-400 flex gap-4 flex-wrap">
               {(challenge.start_date || challenge.end_date) && (
                 <span>
                   {formatDate(challenge.start_date)}
@@ -64,8 +61,8 @@ const Challenges = () => {
                   {formatDate(challenge.end_date)}
                 </span>
               )}
-              <span>Goal: {challenge.goal_minutes} minutes</span>
-              {challenge.admin_username && <span>Created by {challenge.admin_username}</span>}
+              <span>Goal: {challenge.goal_minutes} min</span>
+              {challenge.admin_username && <span>by {challenge.admin_username}</span>}
             </div>
           </li>
         ))}

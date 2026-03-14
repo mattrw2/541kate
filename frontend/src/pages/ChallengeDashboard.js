@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Dialog } from "@headlessui/react"
@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from "chart.js"
 import annotationPlugin from "chartjs-plugin-annotation"
+import { ArrowUpOnSquareIcon } from "@heroicons/react/24/outline"
 import { apiUrl } from "../api"
 import { useCurrentUser } from "../UserContext"
 
@@ -35,82 +36,175 @@ const BORDER_COLORS = [
   "rgb(201, 203, 207)",
 ]
 
-const ActivityItem = ({ activity, onIncrementSus, onDelete }) => {
+const getSusKey = (userId) => `sus_votes_${userId}`
+const hasVotedSus = (userId, activityId) => {
+  if (!userId) return false
+  const votes = JSON.parse(localStorage.getItem(getSusKey(userId)) || "[]")
+  return votes.includes(activityId)
+}
+const setSusVote = (userId, activityId, val) => {
+  const votes = JSON.parse(localStorage.getItem(getSusKey(userId)) || "[]")
+  const updated = val ? [...new Set([...votes, activityId])] : votes.filter((id) => id !== activityId)
+  localStorage.setItem(getSusKey(userId), JSON.stringify(updated))
+}
+
+const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, currentUser }) => {
   const [showFullPhoto, setShowFullPhoto] = useState(false)
   const [susCount, setSusCount] = useState(activity.sus_count || 0)
+  const [voted, setVoted] = useState(() => hasVotedSus(currentUser?.id, activity.id))
   const [hovering, setHovering] = useState(false)
+  const [commentText, setCommentText] = useState("")
+  const commentInputRef = useRef(null)
+  const queryClient = useQueryClient()
 
   const [year, month, day] = activity.date.split("-")
   const date = new Date(year, month - 1, day)
   const monthStr = date.toLocaleDateString("en-US", { month: "short" })
   const dayStr = date.toLocaleDateString("en-US", { day: "numeric" })
 
+  const { data: comments = [] } = useQuery({
+    queryKey: ["activity", activity.id, "comments"],
+    queryFn: () => fetch(`${apiUrl}/activities/${activity.id}/comments`).then((r) => r.json()),
+  })
+
+  const addComment = useMutation({
+    mutationFn: (body) =>
+      fetch(`${apiUrl}/activities/${activity.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activity", activity.id, "comments"] })
+      setCommentText("")
+    },
+  })
+
   const handleSus = (e) => {
     e.stopPropagation()
-    setSusCount((c) => c + 1)
-    onIncrementSus(activity.id)
+    if (!currentUser) return
+    if (voted) {
+      setSusCount((c) => Math.max(0, c - 1))
+      setVoted(false)
+      setSusVote(currentUser.id, activity.id, false)
+      onDecrementSus(activity.id)
+    } else {
+      setSusCount((c) => c + 1)
+      setVoted(true)
+      setSusVote(currentUser.id, activity.id, true)
+      onIncrementSus(activity.id)
+    }
   }
 
-  const susActive = susCount > 0 || hovering
+  const handleAddComment = () => {
+    if (!commentText.trim()) return
+    addComment.mutate({ user_id: currentUser?.id, text: commentText.trim() })
+  }
+
+  const susActive = voted || hovering
 
   return (
-    <li
-      className={`flex items-start gap-3 px-3 py-2.5 bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow transition-shadow ${activity.photo_path ? "cursor-pointer" : ""}`}
-      onClick={() => activity.photo_path && setShowFullPhoto((v) => !v)}
-    >
-      <div className="flex-shrink-0 text-center w-8 pt-0.5">
-        <div className="text-[10px] uppercase tracking-wide text-gray-400">{monthStr}</div>
-        <div className="text-lg font-light text-gray-700 leading-tight">{dayStr}</div>
-      </div>
+    <li className="bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow transition-shadow">
+      <div
+        className={`flex items-start gap-3 px-3 py-2.5 ${activity.photo_path ? "cursor-pointer" : ""}`}
+        onClick={() => activity.photo_path && setShowFullPhoto((v) => !v)}
+      >
+        <div className="flex-shrink-0 text-center w-8 pt-0.5">
+          <div className="text-[10px] uppercase tracking-wide text-gray-400">{monthStr}</div>
+          <div className="text-lg font-light text-gray-700 leading-tight">{dayStr}</div>
+        </div>
 
-      <div className="w-px bg-yellow-400 self-stretch flex-shrink-0" />
+        <div className="w-px bg-yellow-400 self-stretch flex-shrink-0" />
 
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-gray-800">{activity.username}</div>
-        {activity.memo && (
-          <div className="text-xs text-gray-500 mt-0.5">{activity.memo}</div>
-        )}
-        {activity.lat != null && activity.lng != null && (
-          <a
-            href={`https://www.google.com/maps?q=${activity.lat},${activity.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="text-xs text-gray-400 hover:text-yellow-500 mt-0.5 block"
-          >
-            📍 {activity.lat.toFixed(4)}, {activity.lng.toFixed(4)}
-          </a>
-        )}
-        {activity.photo_path && showFullPhoto && (
-          <img src={`${apiUrl}${activity.photo_path}`} alt="activity" className="mt-2 rounded-md max-w-full" />
-        )}
-      </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-gray-800">{activity.username}</div>
+          {activity.memo && (
+            <div className="text-xs text-gray-500 mt-0.5">{activity.memo}</div>
+          )}
+          {activity.lat != null && activity.lng != null && (
+            <a
+              href={`https://www.google.com/maps?q=${activity.lat},${activity.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs text-gray-400 hover:text-yellow-500 mt-0.5 block"
+            >
+              📍 {activity.lat.toFixed(4)}, {activity.lng.toFixed(4)}
+            </a>
+          )}
+          {activity.photo_path && showFullPhoto && (
+            <img src={`${apiUrl}${activity.photo_path}`} alt="activity" className="mt-2 rounded-md max-w-full" />
+          )}
+        </div>
 
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {activity.photo_path && !showFullPhoto && (
-          <img src={`${apiUrl}${activity.photo_path}`} alt="thumbnail" className="w-8 h-8 rounded object-cover" />
-        )}
-        <button
-          className="flex items-center gap-0.5 text-gray-400 hover:text-yellow-500 transition-colors"
-          onClick={handleSus}
-          onMouseOver={() => setHovering(true)}
-          onMouseOut={() => setHovering(false)}
-        >
-          <img src={susActive ? "/suspicious.png" : "/suspicious_gray.png"} alt="Sus" width={16} height={16} />
-          {susCount > 0 && <span className="text-xs">{susCount}</span>}
-        </button>
-        <span className="text-sm font-light text-gray-600 whitespace-nowrap">
-          {activity.duration}<span className="text-xs text-gray-400 ml-0.5">min</span>
-        </span>
-        {onDelete && (
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {activity.photo_path && !showFullPhoto && (
+            <img src={`${apiUrl}${activity.photo_path}`} alt="thumbnail" className="w-8 h-8 rounded object-cover" />
+          )}
           <button
-            onClick={(e) => { e.stopPropagation(); onDelete(activity.id) }}
-            className="text-gray-300 hover:text-red-400 transition-colors text-xs leading-none"
-            title="Delete"
+            className="flex items-center gap-0.5 text-gray-400 hover:text-yellow-500 transition-colors"
+            onClick={handleSus}
+            onMouseOver={() => setHovering(true)}
+            onMouseOut={() => setHovering(false)}
           >
-            ✕
+            <img src={susActive ? "/suspicious.png" : "/suspicious_gray.png"} alt="Sus" width={16} height={16} />
+            {susCount > 0 && <span className="text-xs">{susCount}</span>}
           </button>
-        )}
+          <span className="text-sm font-light text-gray-600 whitespace-nowrap">
+            {activity.duration}<span className="text-xs text-gray-400 ml-0.5">min</span>
+          </span>
+          {onDelete && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(activity.id) }}
+              className="text-gray-300 hover:text-red-400 transition-colors text-xs leading-none"
+              title="Delete"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Comments */}
+      <div className="px-3 pb-2 border-t border-gray-50">
+        <div className="mt-1.5 space-y-2">
+          {comments.map((c) => (
+            <div key={c.id} className="text-xs text-gray-600 border-l-2 border-yellow-200 pl-2">
+              <span className="font-medium text-gray-700">{c.username || "Anonymous"}</span>
+              <span className="ml-1">{c.text}</span>
+              {c.lat != null && c.lng != null && (
+                <a
+                  href={`https://www.google.com/maps?q=${c.lat},${c.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1 text-gray-400 hover:text-yellow-500"
+                >
+                  📍 {c.lat.toFixed(4)}, {c.lng.toFixed(4)}
+                </a>
+              )}
+            </div>
+          ))}
+          {currentUser && (
+            <div className="flex gap-1 mt-1">
+              <input
+                ref={commentInputRef}
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleAddComment() }}
+                placeholder="Add a comment..."
+                className="font-thin text-xs border rounded px-2 py-1 flex-1"
+              />
+              <button
+                onClick={handleAddComment}
+                disabled={addComment.isPending}
+                className="text-xs text-yellow-600 border border-yellow-600 rounded px-2 py-1 hover:bg-yellow-600 hover:text-white disabled:opacity-50"
+              >
+                Post
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </li>
   )
@@ -161,6 +255,8 @@ const ChallengeDashboard = () => {
   const [showPrizeForm, setShowPrizeForm] = useState(false)
   const [prizeForm, setPrizeForm] = useState({ name: "", description: "" })
   const [showManage, setShowManage] = useState(false)
+  const [showShare, setShowShare] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [manageForm, setManageForm] = useState({ name: "", description: "", goal_minutes: 600, start_date: "", end_date: "" })
   const [manageSaveSuccess, setManageSaveSuccess] = useState(false)
   const [addUserId, setAddUserId] = useState("")
@@ -201,13 +297,17 @@ const ChallengeDashboard = () => {
       }),
   })
 
-  const deleteActivity = useMutation({
-    mutationFn: ({ activityId, lat, lng }) =>
-      fetch(`${apiUrl}/activities/${activityId}`, {
-        method: "DELETE",
+  const decrementSus = useMutation({
+    mutationFn: (activityId) =>
+      fetch(`${apiUrl}/activities/decrement/${activityId}`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat, lng, deleted_by: currentUser?.username }),
       }),
+  })
+
+  const deleteActivity = useMutation({
+    mutationFn: (activityId) =>
+      fetch(`${apiUrl}/activities/${activityId}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "activities"] })
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "duration"] })
@@ -215,19 +315,7 @@ const ChallengeDashboard = () => {
   })
 
   const handleDeleteActivity = (activityId) => {
-    if (!window.confirm("Delete this activity?")) return
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser. Cannot delete.")
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        deleteActivity.mutate({ activityId, lat: pos.coords.latitude, lng: pos.coords.longitude })
-      },
-      () => {
-        alert("Location access is required to delete an activity.")
-      }
-    )
+    if (window.confirm("Delete this activity?")) deleteActivity.mutate(activityId)
   }
 
   const deletePrize = useMutation({
@@ -357,7 +445,7 @@ const ChallengeDashboard = () => {
           className="bg-gray-200"
           style={{ background: "url('/IMG_1096.jpg') left/cover", width: "100%", height: "150px" }}
         />
-        <div className="absolute top-0 right-0 p-4 text-white font-extralight text-xl">
+        <div className="absolute top-0 right-0 p-4 text-white font-bold text-2xl drop-shadow">
           {challenge?.name || ""}
         </div>
         <div className="absolute top-10 right-5 p-4">
@@ -368,11 +456,31 @@ const ChallengeDashboard = () => {
       <div>
         <div>
           {challenge && (
-            <div className="mx-4 mt-3">
+            <div className="mx-4 mt-3 border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-1">
+                <p className="font-semibold text-base text-gray-800">{challenge.name}</p>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => setShowShare(true)}
+                    className="bg-yellow-700 text-white border border-yellow-700 rounded px-2 py-0.5 text-xs font-thin hover:bg-yellow-800 hover:border-yellow-800 flex items-center gap-1"
+                  >
+                    <ArrowUpOnSquareIcon className="w-3.5 h-3.5" />
+                    Invite
+                  </button>
+                  {currentUser?.id === challenge.admin_user_id && (
+                    <button
+                      onClick={() => setShowManage(true)}
+                      className="text-yellow-600 border border-yellow-600 rounded px-2 py-0.5 text-xs font-thin hover:bg-yellow-600 hover:text-white"
+                    >
+                      Manage
+                    </button>
+                  )}
+                </div>
+              </div>
               {challenge.description && (
                 <p className="font-thin text-sm text-gray-600">{challenge.description}</p>
               )}
-              <div className="flex items-center gap-4 text-xs font-thin text-gray-500 mt-1">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-thin text-gray-500 mt-2">
                 {(challenge.start_date || challenge.end_date) && (
                   <span>
                     {formatDate(challenge.start_date)}
@@ -382,14 +490,6 @@ const ChallengeDashboard = () => {
                 )}
                 <span>Goal: {challenge.goal_minutes} min</span>
                 {challenge.admin_username && <span>by {challenge.admin_username}</span>}
-                {currentUser?.id === challenge.admin_user_id && (
-                  <button
-                    onClick={() => setShowManage(true)}
-                    className="ml-auto text-yellow-600 border border-yellow-600 rounded px-2 py-0.5 text-xs font-thin hover:bg-yellow-600 hover:text-white"
-                  >
-                    Manage
-                  </button>
-                )}
               </div>
             </div>
           )}
@@ -403,7 +503,7 @@ const ChallengeDashboard = () => {
           {/* Prizes */}
           <div className="mx-4 mt-4 mb-8 border border-gray-200 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-thin text-base">Prizes</h3>
+              <h3 className="font-thin text-sm text-gray-500 uppercase tracking-wide">Prizes</h3>
               <button
                 onClick={() => setShowPrizeForm(true)}
                 className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-0.5 px-2 border border-yellow-600 hover:border-transparent rounded text-sm"
@@ -456,6 +556,8 @@ const ChallengeDashboard = () => {
                 key={activity.id}
                 activity={activity}
                 onIncrementSus={(aid) => incrementSus.mutate(aid)}
+                onDecrementSus={(aid) => decrementSus.mutate(aid)}
+                currentUser={currentUser}
                 onDelete={currentUser?.id === activity.user_id ? handleDeleteActivity : null}
               />
             ))}
@@ -482,6 +584,33 @@ const ChallengeDashboard = () => {
         </button>
       )}
 
+      {/* Share modal */}
+      <Dialog open={showShare} onClose={() => { setShowShare(false); setCopied(false) }} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex justify-between items-center mb-4">
+              <Dialog.Title className="text-lg font-light text-gray-800">Invite</Dialog.Title>
+              <button onClick={() => { setShowShare(false); setCopied(false) }} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+            </div>
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={window.location.href}
+                className="font-thin text-sm border rounded px-2 py-1 flex-1 text-gray-600 bg-gray-50"
+                onClick={(e) => e.target.select()}
+              />
+              <button
+                onClick={() => { navigator.clipboard.writeText(window.location.href); setCopied(true) }}
+                className="text-sm font-thin text-yellow-600 border border-yellow-600 rounded px-3 py-1 hover:bg-yellow-600 hover:text-white whitespace-nowrap"
+              >
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+
       {/* Manage modal */}
       <Dialog open={showManage} onClose={() => setShowManage(false)} className="relative z-50">
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
@@ -493,7 +622,6 @@ const ChallengeDashboard = () => {
             </div>
 
             <section className="mb-6">
-              <h3 className="text-sm font-thin text-gray-500 uppercase tracking-wide mb-3 border-b border-gray-200 pb-1">Settings</h3>
               {manageSaveSuccess && <div className="text-green-600 text-sm font-thin mb-2">Saved!</div>}
               <form
                 onSubmit={(e) => {
@@ -506,71 +634,34 @@ const ChallengeDashboard = () => {
                     end_date: manageForm.end_date || null,
                   })
                 }}
-                className="space-y-3"
+                className="space-y-4"
               >
                 <div>
-                  <label className="block text-xs font-thin text-gray-600 mb-1">Name</label>
-                  <input type="text" value={manageForm.name} onChange={(e) => setManageForm((f) => ({ ...f, name: e.target.value }))} className="font-thin border rounded px-2 py-1 w-full text-sm" />
+                  <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">Name</label>
+                  <input type="text" value={manageForm.name} onChange={(e) => setManageForm((f) => ({ ...f, name: e.target.value }))} className="font-thin text-sm border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400" />
                 </div>
                 <div>
-                  <label className="block text-xs font-thin text-gray-600 mb-1">Description</label>
-                  <textarea value={manageForm.description} onChange={(e) => setManageForm((f) => ({ ...f, description: e.target.value }))} className="font-thin border rounded px-2 py-1 w-full text-sm" rows={2} />
+                  <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">Description</label>
+                  <textarea value={manageForm.description} onChange={(e) => setManageForm((f) => ({ ...f, description: e.target.value }))} className="font-thin text-sm border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400" rows={2} />
                 </div>
                 <div>
-                  <label className="block text-xs font-thin text-gray-600 mb-1">Goal (minutes)</label>
-                  <input type="number" value={manageForm.goal_minutes} onChange={(e) => setManageForm((f) => ({ ...f, goal_minutes: parseInt(e.target.value) || 0 }))} className="font-thin border rounded px-2 py-1 w-32 text-sm" min="0" />
+                  <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">Goal (minutes)</label>
+                  <input type="number" value={manageForm.goal_minutes} onChange={(e) => setManageForm((f) => ({ ...f, goal_minutes: parseInt(e.target.value) || 0 }))} className="font-thin text-sm border border-gray-200 rounded px-2 py-1.5 w-32 focus:outline-none focus:border-yellow-400" min="0" />
                 </div>
-                <div className="flex gap-3">
-                  <div>
-                    <label className="block text-xs font-thin text-gray-600 mb-1">Start date</label>
-                    <input type="date" value={manageForm.start_date} onChange={(e) => setManageForm((f) => ({ ...f, start_date: e.target.value }))} className="font-thin border rounded px-2 py-1 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-thin text-gray-600 mb-1">End date</label>
-                    <input type="date" value={manageForm.end_date} onChange={(e) => setManageForm((f) => ({ ...f, end_date: e.target.value }))} className="font-thin border rounded px-2 py-1 text-sm" />
-                  </div>
+                <div>
+                  <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">Start date</label>
+                  <input type="date" value={manageForm.start_date} onChange={(e) => setManageForm((f) => ({ ...f, start_date: e.target.value }))} className="font-thin text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400" />
                 </div>
-                <button type="submit" disabled={updateChallenge.isPending} className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1 px-3 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50">
+                <div>
+                  <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">End date</label>
+                  <input type="date" value={manageForm.end_date} onChange={(e) => setManageForm((f) => ({ ...f, end_date: e.target.value }))} className="font-thin text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400" />
+                </div>
+                <button type="submit" disabled={updateChallenge.isPending} className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1.5 px-4 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50">
                   {updateChallenge.isPending ? "Saving..." : "Save"}
                 </button>
               </form>
             </section>
 
-            <section>
-              <h3 className="text-sm font-thin text-gray-500 uppercase tracking-wide mb-3 border-b border-gray-200 pb-1">Members</h3>
-              <ul className="space-y-2 mb-3">
-                {participants.map((p) => (
-                  <li key={p.id} className="flex justify-between items-center text-sm font-thin">
-                    <span>{p.username}</span>
-                    {p.id !== challenge?.admin_user_id && (
-                      <button
-                        onClick={() => removeParticipant.mutate(p.id)}
-                        className="text-red-400 text-xs border border-red-300 rounded px-2 py-0.5 hover:bg-red-500 hover:text-white"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              {nonParticipants.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <select value={addUserId} onChange={(e) => setAddUserId(e.target.value)} className="font-thin text-sm border rounded px-2 py-1">
-                    <option value="">Add member...</option>
-                    {nonParticipants.map((u) => (
-                      <option key={u.id} value={u.id}>{u.username}</option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() => { if (addUserId) addParticipant.mutate(addUserId) }}
-                    disabled={addParticipant.isPending}
-                    className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1 px-2 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50"
-                  >
-                    Add
-                  </button>
-                </div>
-              )}
-            </section>
           </Dialog.Panel>
         </div>
       </Dialog>

@@ -34,7 +34,7 @@ const CreateChallenge = () => {
   if (!currentUser) {
     return (
       <div className="max-w-md mx-auto px-4">
-        <p className="font-thin text-gray-600">Please select a user first.</p>
+        <p className="font-thin text-sm text-gray-500">Please select a user first.</p>
       </div>
     )
   }
@@ -55,67 +55,66 @@ const CreateChallenge = () => {
 
   return (
     <div className="max-w-md mx-auto px-4">
-      <h2 className="text-2xl font-thin mb-4">New Challenge</h2>
+      <h2 className="text-2xl font-thin mb-6">New Challenge</h2>
 
-      {error && <div className="text-red-600 text-sm font-thin mb-2">{error}</div>}
+      {error && <div className="text-red-500 text-sm font-thin mb-3">{error}</div>}
 
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-thin text-gray-700 mb-1">Name</label>
+          <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">Name</label>
           <input
             type="text"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className="font-thin border rounded px-2 py-1 w-full"
+            className="font-thin text-sm border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-thin text-gray-700 mb-1">Description</label>
+          <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">Description</label>
           <textarea
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            className="font-thin border rounded px-2 py-1 w-full"
+            className="font-thin text-sm border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400"
             rows={3}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-thin text-gray-700 mb-1">Goal (minutes)</label>
+          <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">Goal (minutes)</label>
           <input
             type="number"
             value={form.goal_minutes}
             onChange={(e) => setForm((f) => ({ ...f, goal_minutes: parseInt(e.target.value) || 0 }))}
-            className="font-thin border rounded px-2 py-1 w-32"
+            className="font-thin text-sm border border-gray-200 rounded px-2 py-1.5 w-32 focus:outline-none focus:border-yellow-400"
             min="0"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-thin text-gray-700 mb-1">Start date</label>
+          <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">Start date</label>
           <input
             type="date"
             value={form.start_date}
             onChange={(e) => setForm((f) => ({ ...f, start_date: e.target.value }))}
-            className="font-thin border rounded px-2 py-1"
+            className="font-thin text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400"
           />
         </div>
-
         <div>
-          <label className="block text-sm font-thin text-gray-700 mb-1">End date</label>
+          <label className="block text-xs font-thin text-gray-500 uppercase tracking-wide mb-1">End date</label>
           <input
             type="date"
             value={form.end_date}
             onChange={(e) => setForm((f) => ({ ...f, end_date: e.target.value }))}
-            className="font-thin border rounded px-2 py-1"
+            className="font-thin text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400"
           />
         </div>
 
         <button
           type="submit"
           disabled={createChallenge.isPending}
-          className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-2 px-4 border border-yellow-600 hover:border-transparent rounded disabled:opacity-50"
+          className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1.5 px-4 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50"
         >
           {createChallenge.isPending ? "Creating..." : "Create Challenge"}
         </button>
