@@ -449,13 +449,12 @@ const { data: activities = [] } = useQuery({
 
   return (
     <div className="max-w-3xl mx-auto pb-20">
-      {currentUser && prizesLoaded && !prizes.some((p) => p.user_id === currentUser.id) && (
-        <div className="mx-4 mt-1 mb-4 bg-yellow-600 rounded-lg px-4 py-3 flex items-center justify-between">
-          <p className="text-sm font-medium text-white">
-             Add a prize to join this challenge</p>
+      {activeTab === "dashboard" && currentUser && prizesLoaded && !prizes.some((p) => p.user_id === currentUser.id) && (
+        <div className="mt-1 mb-4 bg-orange-100 px-4 py-3 flex items-center justify-between">
+          <p className="text-sm font-medium text-orange-900">Add a prize to join this challenge</p>
           <button
             onClick={() => { if (currentUser) setShowPrizeForm(true) }}
-            className="text-sm font-semibold text-white underline ml-3 flex-shrink-0 hover:text-yellow-100"
+            className="text-sm font-semibold text-orange-900 underline ml-3 flex-shrink-0 hover:text-orange-700"
           >
             Add Prize
           </button>
@@ -568,9 +567,9 @@ const { data: activities = [] } = useQuery({
 
           {/* Prizes tab */}
           {activeTab === "prizes" && (
-            <div className="mx-4 mt-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-500 uppercase tracking-wide">Prizes</h3>
+            <div className="mx-4 mt-2">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Prizes</h3>
                 {currentUser && !prizes.some((p) => p.user_id === currentUser.id) && (
                   <button
                     onClick={() => setShowPrizeForm(true)}
