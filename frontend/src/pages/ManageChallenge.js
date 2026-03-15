@@ -80,9 +80,9 @@ const ManageChallenge = () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "participants"] }),
   })
 
-  if (!challenge) return <div className="font-thin px-4">Loading...</div>
+  if (!challenge) return <div className="px-4">Loading...</div>
   if (!currentUser || currentUser.id !== challenge.admin_user_id) {
-    return <div className="font-thin px-4 text-red-600">Access denied.</div>
+    return <div className="px-4 text-red-600">Access denied.</div>
   }
 
   const participantIds = participants.map((p) => p.id)
@@ -90,11 +90,11 @@ const ManageChallenge = () => {
 
   return (
     <div className="max-w-md mx-auto px-4">
-      <h2 className="text-2xl font-thin mb-4">Manage: {challenge.name}</h2>
+      <h2 className="text-2xl mb-4">Manage: {challenge.name}</h2>
 
       <section className="mb-8">
-        <h3 className="text-lg font-thin mb-3 border-b border-gray-200 pb-1">Challenge Settings</h3>
-        {saveSuccess && <div className="text-green-600 text-sm font-thin mb-2">Saved!</div>}
+        <h3 className="text-lg mb-3 border-b border-gray-200 pb-1">Challenge Settings</h3>
+        {saveSuccess && <div className="text-green-600 text-sm mb-2">Saved!</div>}
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -109,55 +109,55 @@ const ManageChallenge = () => {
           className="space-y-3"
         >
           <div>
-            <label className="block text-sm font-thin text-gray-700 mb-1">Name</label>
+            <label className="block text-sm text-gray-700 mb-1">Name</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="font-thin border rounded px-2 py-1 w-full"
+              className="border rounded px-2 py-1 w-full"
             />
           </div>
           <div>
-            <label className="block text-sm font-thin text-gray-700 mb-1">Description</label>
+            <label className="block text-sm text-gray-700 mb-1">Description</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              className="font-thin border rounded px-2 py-1 w-full"
+              className="border rounded px-2 py-1 w-full"
               rows={3}
             />
           </div>
           <div>
-            <label className="block text-sm font-thin text-gray-700 mb-1">Goal (minutes)</label>
+            <label className="block text-sm text-gray-700 mb-1">Goal (minutes)</label>
             <input
               type="number"
               value={form.goal_minutes}
               onChange={(e) => setForm((f) => ({ ...f, goal_minutes: parseInt(e.target.value) || 0 }))}
-              className="font-thin border rounded px-2 py-1 w-32"
+              className="border rounded px-2 py-1 w-32"
               min="0"
             />
           </div>
           <div>
-            <label className="block text-sm font-thin text-gray-700 mb-1">Start date</label>
+            <label className="block text-sm text-gray-700 mb-1">Start date</label>
             <input
               type="date"
               value={form.start_date}
               onChange={(e) => setForm((f) => ({ ...f, start_date: e.target.value }))}
-              className="font-thin border rounded px-2 py-1"
+              className="border rounded px-2 py-1"
             />
           </div>
           <div>
-            <label className="block text-sm font-thin text-gray-700 mb-1">End date</label>
+            <label className="block text-sm text-gray-700 mb-1">End date</label>
             <input
               type="date"
               value={form.end_date}
               onChange={(e) => setForm((f) => ({ ...f, end_date: e.target.value }))}
-              className="font-thin border rounded px-2 py-1"
+              className="border rounded px-2 py-1"
             />
           </div>
           <button
             type="submit"
             disabled={updateChallenge.isPending}
-            className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1 px-3 border border-yellow-600 hover:border-transparent rounded disabled:opacity-50"
+            className="bg-transparent hover:bg-yellow-600 text-yellow-600 hover:text-white py-1 px-3 border border-yellow-600 hover:border-transparent rounded disabled:opacity-50"
           >
             {updateChallenge.isPending ? "Saving..." : "Save"}
           </button>
@@ -165,10 +165,10 @@ const ManageChallenge = () => {
       </section>
 
       <section>
-        <h3 className="text-lg font-thin mb-3 border-b border-gray-200 pb-1">Members</h3>
+        <h3 className="text-lg mb-3 border-b border-gray-200 pb-1">Members</h3>
         <ul className="space-y-2 mb-4">
           {participants.map((p) => (
-            <li key={p.id} className="flex justify-between items-center text-sm font-thin">
+            <li key={p.id} className="flex justify-between items-center text-sm">
               <span>{p.username}</span>
               {p.id !== challenge.admin_user_id && (
                 <button
@@ -187,7 +187,7 @@ const ManageChallenge = () => {
             <select
               value={addUserId}
               onChange={(e) => setAddUserId(e.target.value)}
-              className="font-thin text-sm border rounded px-2 py-1"
+              className="text-sm border rounded px-2 py-1"
             >
               <option value="">Add member...</option>
               {nonParticipants.map((u) => (
@@ -197,7 +197,7 @@ const ManageChallenge = () => {
             <button
               onClick={() => { if (addUserId) addParticipant.mutate(addUserId) }}
               disabled={addParticipant.isPending}
-              className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1 px-2 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50"
+              className="bg-transparent hover:bg-yellow-600 text-yellow-600 hover:text-white py-1 px-2 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50"
             >
               Add
             </button>

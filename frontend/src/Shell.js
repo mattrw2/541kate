@@ -141,7 +141,7 @@ const Shell = ({ children }) => {
           )}
         </Disclosure>
 
-        <div className="py-2">
+        <div>
           {page && (
             <header>
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -167,7 +167,6 @@ const Shell = ({ children }) => {
               <button onClick={() => setShowAddUser(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
             </div>
             <input
-              autoFocus
               type="text"
               value={newUsername}
               onChange={(e) => setNewUsername(e.target.value)}
@@ -176,18 +175,18 @@ const Shell = ({ children }) => {
                 if (e.key === "Escape") setShowAddUser(false);
               }}
               placeholder="Your name"
-              className="font-thin text-sm border rounded px-2 py-1 w-full mb-4"
+              className="text-base border rounded px-2 py-1 w-full mb-4"
             />
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowAddUser(false)}
-                className="font-thin text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5"
+                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddUser}
-                className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1.5 px-4 border border-yellow-600 hover:border-transparent rounded text-sm"
+                className="bg-transparent hover:bg-yellow-600 text-yellow-600 hover:text-white py-1.5 px-4 border border-yellow-600 hover:border-transparent rounded text-sm"
               >
                 Add
               </button>

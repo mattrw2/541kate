@@ -26,3 +26,4 @@ yarn-error.log*
 /frontend/build
 /backend/src/database.db
 /backend/database
+backend/database/database.db

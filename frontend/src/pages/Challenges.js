@@ -23,16 +23,16 @@ const Challenges = () => {
   return (
     <div className="max-w-3xl mx-auto px-4">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-thin">Challenges</h2>
+        <h2 className="text-2xl">Challenges</h2>
         {currentUser ? (
           <Link
             to="/challenge/new"
-            className="bg-transparent hover:bg-yellow-600 text-yellow-600 font-thin hover:text-white py-1 px-3 border border-yellow-600 hover:border-transparent rounded text-sm"
+            className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium"
           >
             New Challenge
           </Link>
         ) : (
-          <span className="text-sm text-gray-400 font-thin">Select a user to create challenges.</span>
+          <span className="text-sm text-gray-500">Select a user to create challenges.</span>
         )}
       </div>
 
@@ -48,9 +48,9 @@ const Challenges = () => {
               </Link>
             </div>
             {challenge.description && (
-              <p className="text-sm font-thin text-gray-600 mt-1">{challenge.description}</p>
+              <p className="text-sm text-gray-700 mt-1">{challenge.description}</p>
             )}
-            <div className="mt-2 text-xs font-thin text-gray-400 flex gap-4 flex-wrap">
+            <div className="mt-2 text-xs text-gray-700 flex gap-4 flex-wrap">
               {(challenge.start_date || challenge.end_date) && (
                 <span>
                   {formatDate(challenge.start_date)}

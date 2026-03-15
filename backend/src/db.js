@@ -123,6 +123,13 @@ dbWrapper
           await db.run(createPrizesTableSQL);
         }
 
+        // Check and add riley_chooses to prizes
+        const prizeColumns = await db.all("PRAGMA table_info(prizes)");
+        if (!prizeColumns.map((c) => c.name).includes("riley_chooses")) {
+          console.log("Adding riley_chooses column to prizes");
+          await db.run("ALTER TABLE prizes ADD COLUMN riley_chooses INTEGER NOT NULL DEFAULT 0");
+        }
+
         // Check and add photo_path to challenges
         const challengeColumns = await db.all("PRAGMA table_info(challenges)");
         if (!challengeColumns.map((c) => c.name).includes("photo_path")) {
@@ -322,13 +329,27 @@ const removeChallengeParticipant = async (challenge_id, user_id) => {
 };
 
 const getChallengeActivities = async (challenge_id) => {
-  return await db.all(
+  const activities = await db.all(
     `SELECT a.*, u.username FROM activities a
     JOIN users u ON a.user_id = u.id
     WHERE a.challenge_id = ?
     ORDER BY a.date DESC, a.id DESC`,
     [challenge_id]
   );
+  const comments = await db.all(
+    `SELECT c.*, u.username FROM activity_comments c
+    JOIN activities a ON c.activity_id = a.id
+    LEFT JOIN users u ON c.user_id = u.id
+    WHERE a.challenge_id = ?
+    ORDER BY c.created_at ASC`,
+    [challenge_id]
+  );
+  const commentsByActivity = {}
+  for (const c of comments) {
+    if (!commentsByActivity[c.activity_id]) commentsByActivity[c.activity_id] = []
+    commentsByActivity[c.activity_id].push(c)
+  }
+  return activities.map((a) => ({ ...a, comments: commentsByActivity[a.id] || [] }))
 };
 
 const getChallengeDuration = async (challenge_id) => {
@@ -354,16 +375,28 @@ const getPrizes = async (challenge_id) => {
   );
 };
 
-const addPrize = async (challenge_id, name, description, user_id) => {
+const getUserPrizeForChallenge = async (challenge_id, user_id) => {
+  return await db.get("SELECT id FROM prizes WHERE challenge_id = ? AND user_id = ?", [challenge_id, user_id]);
+};
+
+const addPrize = async (challenge_id, name, description, user_id, riley_chooses) => {
   const result = await db.run(
-    "INSERT INTO prizes (challenge_id, name, description, user_id) VALUES (?, ?, ?, ?)",
-    [challenge_id, name, description, user_id]
+    "INSERT INTO prizes (challenge_id, name, description, user_id, riley_chooses) VALUES (?, ?, ?, ?, ?)",
+    [challenge_id, name, description, user_id, riley_chooses ? 1 : 0]
   );
   return await db.get(
     `SELECT p.*, u.username FROM prizes p
     LEFT JOIN users u ON p.user_id = u.id
     WHERE p.id = ?`,
     [result.lastID]
+  );
+};
+
+const updatePrize = async (id, name, description) => {
+  await db.run("UPDATE prizes SET name = ?, description = ? WHERE id = ?", [name, description, id]);
+  return await db.get(
+    `SELECT p.*, u.username FROM prizes p LEFT JOIN users u ON p.user_id = u.id WHERE p.id = ?`,
+    [id]
   );
 };
 
@@ -416,7 +449,9 @@ module.exports = {
   getChallengeActivities,
   getChallengeDuration,
   getPrizes,
+  getUserPrizeForChallenge,
   addPrize,
+  updatePrize,
   deletePrize,
   getActivityComments,
   addActivityComment,

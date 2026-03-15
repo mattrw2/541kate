@@ -147,16 +147,31 @@ router.get("/:id/prizes", async (req, res) => {
 // POST /:id/prizes
 router.post("/:id/prizes", async (req, res) => {
   const { id } = req.params;
-  const { name, description, user_id } = req.body;
-  if (!name) {
+  const { name, description, user_id, riley_chooses } = req.body;
+  if (!name && !riley_chooses) {
     return res.status(400).send("Name is required.");
   }
   try {
-    const prize = await db.addPrize(id, name, description, user_id);
+    const existing = await db.getUserPrizeForChallenge(id, user_id);
+    if (existing) return res.status(400).send("You have already added a prize to this challenge.");
+    const prize = await db.addPrize(id, riley_chooses ? "Riley will choose my fate" : name, description, user_id, riley_chooses);
     return res.json(prize);
   } catch (error) {
     console.error(error);
     res.status(500).send("An error occurred while adding prize.");
+  }
+});
+
+// PUT /:id/prizes/:prizeId
+router.put("/:id/prizes/:prizeId", async (req, res) => {
+  const { prizeId } = req.params;
+  const { name, description } = req.body;
+  try {
+    const prize = await db.updatePrize(prizeId, name, description);
+    return res.json(prize);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while updating prize.");
   }
 });
 
