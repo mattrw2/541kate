@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Dialog } from "@headlessui/react"
@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from "chart.js"
 import annotationPlugin from "chartjs-plugin-annotation"
-import { ArrowUpOnSquareIcon, TrophyIcon, BoltIcon, Cog6ToothIcon, ChevronDownIcon, ChevronUpIcon, ChartBarIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
+import { ArrowUpOnSquareIcon, TrophyIcon, BoltIcon, Cog6ToothIcon, ChevronDownIcon, ChevronUpIcon, ChartBarIcon, MagnifyingGlassIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline"
 import { apiUrl } from "../api"
 import { useCurrentUser } from "../UserContext"
 
@@ -86,6 +86,8 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
   const [voted, setVoted] = useState(() => hasVotedSus(currentUser?.id, activity.id))
   const [hovering, setHovering] = useState(false)
   const [commentText, setCommentText] = useState("")
+  const [showComments, setShowComments] = useState(false)
+  const commentInputRef = useRef(null)
   const queryClient = useQueryClient()
 
   const [year, month, day] = activity.date.split("-")
@@ -194,35 +196,44 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
       </div>
 
       {/* Comments */}
-      <div className="px-3 pb-2 border-t border-gray-50">
-        <div className="mt-1.5 space-y-2">
-          {comments.map((c) => (
-            <div key={c.id} className="text-xs text-gray-600 border-l-2 border-yellow-200 pl-2">
-              <span className="font-medium text-gray-700">{c.username || "Anonymous"}</span>
-              <span className="ml-1">{c.text}</span>
-            </div>
-          ))}
-          {currentUser && (
-            <div className="flex gap-2 mt-1">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleAddComment() }}
-                placeholder="Add a comment..."
-                className="text-base border rounded px-2 py-1 flex-1"
-              />
-              <button
-                onClick={handleAddComment}
-                disabled={addComment.isPending || !commentText.trim()}
-                className={`rounded px-3 py-1 text-sm font-medium transition-colors ${commentText.trim() ? "bg-yellow-600 hover:bg-yellow-700 text-white" : "bg-gray-100 text-gray-300 cursor-default"}`}
-              >
-                Post
-              </button>
-            </div>
-          )}
+      {(comments.length > 0 || showComments) && (
+        <div className="px-3 pb-2 border-t border-gray-50">
+          <div className="mt-1.5 space-y-2">
+            {comments.map((c) => (
+              <div key={c.id} className="text-xs text-gray-600 border-l-2 border-yellow-200 pl-2">
+                <span className="font-medium text-gray-700">{c.username || "Anonymous"}</span>
+                <span className="ml-1">{c.text}</span>
+              </div>
+            ))}
+            {currentUser && (
+              <div className="flex gap-2 mt-1">
+                <input
+                  ref={commentInputRef}
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleAddComment() }}
+                  placeholder="Add a comment..."
+                  className="text-base border rounded px-2 py-1 flex-1"
+                />
+                <button
+                  onClick={handleAddComment}
+                  disabled={addComment.isPending || !commentText.trim()}
+                  className={`rounded px-3 py-1 text-sm font-medium transition-colors ${commentText.trim() ? "bg-yellow-600 hover:bg-yellow-700 text-white" : "bg-gray-100 text-gray-300 cursor-default"}`}
+                >
+                  Post
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+      {currentUser && comments.length === 0 && !showComments && (
+        <button onClick={() => { setShowComments(true); setTimeout(() => commentInputRef.current?.focus(), 0) }} className="px-3 pb-2 flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600 transition-colors">
+          <ChatBubbleLeftIcon className="w-3.5 h-3.5" />
+          comment
+        </button>
+      )}
     </li>
   )
 }
@@ -386,8 +397,8 @@ const { data: activities = [] } = useQuery({
   }
 
   const handleAddPrize = () => {
-    if (!prizeForm.name && !prizeForm.riley_chooses) { showTooltipMsg("Please enter a prize name."); return }
-    addPrizeMutation.mutate({ name: prizeForm.riley_chooses ? "Riley will choose my fate" : prizeForm.name, description: prizeForm.description, user_id: currentUser?.id, riley_chooses: prizeForm.riley_chooses })
+    if (!prizeForm.description && !prizeForm.riley_chooses) { showTooltipMsg("Please enter a prize description."); return }
+    addPrizeMutation.mutate({ name: prizeForm.riley_chooses ? "Riley will choose my fate" : prizeForm.description, description: prizeForm.description, user_id: currentUser?.id, riley_chooses: prizeForm.riley_chooses })
   }
 
   const chartOptions = challenge
@@ -486,7 +497,7 @@ const { data: activities = [] } = useQuery({
           )}
           {showInfo && (
             <div className="mt-2">
-              {challenge.description && <p className="text-sm text-gray-600">{challenge.description}</p>}
+              {challenge.description && <p className="text-sm text-gray-600 whitespace-pre-wrap">{challenge.description}</p>}
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-1">
                 {(challenge.start_date || challenge.end_date) && (
                   <span>{formatDate(challenge.start_date)}{challenge.start_date && challenge.end_date ? " – " : ""}{formatDate(challenge.end_date)}</span>
@@ -544,7 +555,7 @@ const { data: activities = [] } = useQuery({
                   )}
                 </div>
                 <ul className="space-y-2">
-                  {(showAllActivities ? activities.filter((a) => !a.IS_ARCHIVED) : activities.filter((a) => !a.IS_ARCHIVED).slice(0, 20)).filter((a) => !activitySearch || a.username?.toLowerCase().includes(activitySearch.toLowerCase()) || a.memo?.toLowerCase().includes(activitySearch.toLowerCase())).map((activity) => (
+                  {(activitySearch ? activities : showAllActivities ? activities.filter((a) => !a.IS_ARCHIVED) : activities.filter((a) => !a.IS_ARCHIVED).slice(0, 20)).filter((a) => !activitySearch || a.username?.toLowerCase().includes(activitySearch.toLowerCase()) || a.memo?.toLowerCase().includes(activitySearch.toLowerCase())).map((activity) => (
                     <ActivityItem
                       key={activity.id}
                       activity={activity}
@@ -585,8 +596,7 @@ const { data: activities = [] } = useQuery({
                 {prizes.map((prize) => (
                   <li key={prize.id} className="flex items-start justify-between border-b border-gray-200 pb-3">
                     <div>
-                      <p className="text-base font-medium text-gray-800">{prize.riley_chooses ? "🎲 " : ""}{prize.name}{prize.username && <span className="text-xs text-gray-400 font-normal ml-1.5">by <span className="text-orange-500">{prize.username}</span></span>}</p>
-                      {prize.description && <p className="text-sm text-gray-500 mt-0.5">{prize.description}</p>}
+                      <p className="text-base font-medium text-gray-800 whitespace-pre-wrap">{prize.riley_chooses ? "🎲 Riley will choose my fate" : prize.name}{prize.username && <span className="text-xs text-gray-400 font-normal ml-1.5">by <span className="text-orange-500">{prize.username}</span></span>}</p>
                     </div>
                     {((prize.riley_chooses && currentUser?.username === "Riley") || (!prize.riley_chooses && (prize.user_id == null || currentUser?.id === prize.user_id))) && (
                       <button onClick={() => setEditingPrize(prize)} className="ml-3 flex-shrink-0 border border-gray-200 rounded px-2.5 py-1 text-xs text-gray-500 hover:border-yellow-500 hover:text-yellow-600 transition-colors">Edit</button>
@@ -736,10 +746,7 @@ const { data: activities = [] } = useQuery({
                 </button>
               </div>
               {!prizeForm.riley_chooses && (
-                <input type="text" value={prizeForm.name} onChange={(e) => setPrizeForm((f) => ({ ...f, name: e.target.value }))} placeholder="Prize name" className="border rounded px-2 py-1 w-full text-base" />
-              )}
-              {!prizeForm.riley_chooses && (
-                <input type="text" value={prizeForm.description} onChange={(e) => setPrizeForm((f) => ({ ...f, description: e.target.value }))} placeholder="Description" className="border rounded px-2 py-1 w-full text-base" />
+                <textarea value={prizeForm.description} onChange={(e) => setPrizeForm((f) => ({ ...f, description: e.target.value }))} placeholder="Describe the prize" rows={3} className="border rounded px-2 py-1 w-full text-base" />
               )}
               <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={() => setShowPrizeForm(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
@@ -762,25 +769,18 @@ const { data: activities = [] } = useQuery({
               <button onClick={() => setEditingPrize(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
             </div>
             <div className="space-y-3">
-              <input
-                type="text"
-                value={editingPrize?.name || ""}
-                onChange={(e) => setEditingPrize((p) => ({ ...p, name: e.target.value }))}
-                placeholder="Prize name"
-                className="border rounded px-2 py-1 w-full text-base"
-              />
-              <input
-                type="text"
-                value={editingPrize?.description || ""}
+              <textarea
+                value={editingPrize?.description || editingPrize?.name || ""}
                 onChange={(e) => setEditingPrize((p) => ({ ...p, description: e.target.value }))}
-                placeholder="Description"
+                placeholder="Describe the prize"
+                rows={3}
                 className="border rounded px-2 py-1 w-full text-base"
               />
               <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={() => setEditingPrize(null)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
                 <button
                   type="button"
-                  onClick={() => editPrizeMutation.mutate({ prizeId: editingPrize.id, body: { name: editingPrize.name, description: editingPrize.description } })}
+                  onClick={() => editPrizeMutation.mutate({ prizeId: editingPrize.id, body: { name: editingPrize.description, description: editingPrize.description } })}
                   disabled={editPrizeMutation.isPending}
                   className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-4 py-1.5 text-sm disabled:opacity-50"
                 >
@@ -825,6 +825,15 @@ const { data: activities = [] } = useQuery({
                     style={{ WebkitAppearance: "none", MozAppearance: "textfield" }}
                   />
                   <span className="text-sm text-gray-500">minutes</span>
+                  {formData.duration > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData((f) => ({ ...f, duration: String(parseInt(f.duration) * 2) }))}
+                      className="text-xs bg-yellow-100 text-yellow-700 border border-yellow-300 rounded px-2 py-1 hover:bg-yellow-200 transition-colors"
+                    >
+                      Boost my exercise
+                    </button>
+                  )}
                 </div>
               </div>
 
