@@ -48,7 +48,7 @@ const Challenges = () => {
               </Link>
             </div>
             {challenge.description && (
-              <p className="text-sm text-gray-700 mt-1">{challenge.description}</p>
+              <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{challenge.description}</p>
             )}
             <div className="mt-2 text-xs text-gray-700 flex gap-4 flex-wrap">
               {(challenge.start_date || challenge.end_date) && (

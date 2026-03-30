@@ -270,12 +270,18 @@ const { data: activities = [] } = useQuery({
   const [editingPrize, setEditingPrize] = useState(null)
   const [showManage, setShowManage] = useState(false)
   const [showShare, setShowShare] = useState(false)
-  const [showInfo, setShowInfo] = useState(false)
+  const [showInfo, setShowInfo] = useState(true)
   const [activeTab, setActiveTab] = useState("dashboard")
   const [copied, setCopied] = useState(false)
   const [manageForm, setManageForm] = useState({ name: "", description: "", goal_minutes: 600, start_date: "", end_date: "" })
   const [managePhoto, setManagePhoto] = useState(null)
   const [manageSaveSuccess, setManageSaveSuccess] = useState(false)
+
+  useEffect(() => {
+    if (prizesLoaded && currentUser && prizes.some((p) => p.user_id === currentUser.id)) {
+      setShowInfo(false)
+    }
+  }, [prizesLoaded, prizes, currentUser])
 
   useEffect(() => {
     if (challenge && showManage) {
@@ -480,10 +486,12 @@ const { data: activities = [] } = useQuery({
               {showInfo ? <ChevronUpIcon className="w-4 h-4 text-gray-400" /> : <ChevronDownIcon className="w-4 h-4 text-gray-400" />}
             </button>
             <div className="flex gap-1.5 items-center">
-<button onClick={() => setShowShare(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium flex items-center gap-1">
-                <ArrowUpOnSquareIcon className="w-3.5 h-3.5" />
-                Invite
-              </button>
+{prizes.some((p) => p.user_id === currentUser?.id) && (
+                <button onClick={() => setShowShare(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium flex items-center gap-1">
+                  <ArrowUpOnSquareIcon className="w-3.5 h-3.5" />
+                  Invite
+                </button>
+              )}
               {currentUser?.id === challenge.admin_user_id && (
                 <button onClick={() => setShowManage(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
                   <Cog6ToothIcon className="w-4 h-4" />
