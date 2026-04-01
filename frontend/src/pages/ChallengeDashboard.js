@@ -85,6 +85,10 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
   const [susCount, setSusCount] = useState(activity.sus_count || 0)
   const [voted, setVoted] = useState(() => hasVotedSus(currentUser?.id, activity.id))
   const [hovering, setHovering] = useState(false)
+
+  useEffect(() => {
+    setVoted(hasVotedSus(currentUser?.id, activity.id))
+  }, [currentUser?.id, activity.id])
   const [commentText, setCommentText] = useState("")
   const [showComments, setShowComments] = useState(false)
   const commentInputRef = useRef(null)
