@@ -142,6 +142,7 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
         <div className="flex-shrink-0 text-center w-8 pt-0.5">
           <div className="text-[10px] uppercase tracking-wide text-gray-400">{monthStr}</div>
           <div className="text-lg font-light text-gray-700 leading-tight">{dayStr}</div>
+
         </div>
 
         <div className="w-px bg-yellow-400 self-stretch flex-shrink-0" />
@@ -180,6 +181,9 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
             <img src={susActive ? "/suspicious.png" : "/suspicious_gray.png"} alt="Sus" width={16} height={16} />
             {susCount > 0 && <span className="text-xs">{susCount}</span>}
           </button>
+          {activity.is_boosted ? (
+            <span className="text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-300 rounded px-1.5 py-0.5 whitespace-nowrap">⚡ Boosted</span>
+          ) : null}
           <span className="text-base font-semibold text-gray-800 whitespace-nowrap">
             {activity.duration}<span className="text-xs font-normal text-gray-400 ml-0.5">min</span>
           </span>
@@ -263,7 +267,7 @@ const { data: activities = [] } = useQuery({
   const [showAllActivities, setShowAllActivities] = useState(false)
   const [activitySearch, setActivitySearch] = useState("")
   const [chartTodayOnly, setChartTodayOnly] = useState(false)
-  const [formData, setFormData] = useState({ duration: "", date: today, memo: "", photo: null })
+  const [formData, setFormData] = useState({ duration: "", date: today, memo: "", photo: null, is_boosted: false })
   const [tooltip, setTooltip] = useState(null)
   const [showPrizeForm, setShowPrizeForm] = useState(false)
   const [prizeForm, setPrizeForm] = useState({ name: "", description: "", riley_chooses: false })
@@ -306,7 +310,7 @@ const { data: activities = [] } = useQuery({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "activities"] })
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "duration"] })
-      setFormData({ duration: "", date: today, memo: "", photo: null })
+      setFormData({ duration: "", date: today, memo: "", photo: null, is_boosted: false })
       setShowForm(false)
     },
   })
@@ -381,13 +385,13 @@ const { data: activities = [] } = useQuery({
   })
 
   const handleSave = () => {
-    const { duration, date, memo, photo } = formData
+    const { duration, date, memo, photo, is_boosted } = formData
     if (!date) { showTooltipMsg("Please enter a date."); return }
     if (!duration || duration < 0) { showTooltipMsg("Please enter a valid time."); return }
 
     const submit = (lat, lng) => {
       const fd = new FormData()
-      fd.append("data", JSON.stringify({ user_id: currentUser.id, duration, date, memo, challenge_id: id, lat, lng }))
+      fd.append("data", JSON.stringify({ user_id: currentUser.id, duration, date, memo, challenge_id: id, lat, lng, is_boosted }))
       if (photo) fd.append("photo", photo)
       saveActivity.mutate(fd)
     }
@@ -836,10 +840,10 @@ const { data: activities = [] } = useQuery({
                   {formData.duration > 0 && (
                     <button
                       type="button"
-                      onClick={() => setFormData((f) => ({ ...f, duration: String(parseInt(f.duration) * 2) }))}
-                      className="text-xs bg-yellow-100 text-yellow-700 border border-yellow-300 rounded px-2 py-1 hover:bg-yellow-200 transition-colors"
+                      onClick={() => setFormData((f) => f.is_boosted ? { ...f, duration: String(Math.round(parseInt(f.duration) / 2)), is_boosted: false } : { ...f, duration: String(parseInt(f.duration) * 2), is_boosted: true })}
+                      className={`text-xs border rounded px-2 py-1 transition-colors ${formData.is_boosted ? "bg-yellow-500 text-white border-yellow-500" : "bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200"}`}
                     >
-                      Boost my exercise
+                      {formData.is_boosted ? "⚡ Boosted!" : "Boost my exercise"}
                     </button>
                   )}
                 </div>

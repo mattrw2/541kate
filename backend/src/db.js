@@ -29,7 +29,7 @@ const createUsersTableSQL =
 const createActivityTableSQL =
   "CREATE TABLE activities (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, " +
   "duration INTEGER NOT NULL, memo TEXT, " +
-  "date TEXT NOT NULL, photo_path TEXT, sus_count INTEGER DEFAULT 0, IS_ARCHIVED INTEGER DEFAULT 0, challenge_id INTEGER DEFAULT 1, FOREIGN KEY(user_id) REFERENCES users(id))";
+  "date TEXT NOT NULL, photo_path TEXT, sus_count INTEGER DEFAULT 0, IS_ARCHIVED INTEGER DEFAULT 0, challenge_id INTEGER DEFAULT 1, is_boosted INTEGER DEFAULT 0, FOREIGN KEY(user_id) REFERENCES users(id))";
 const createChallengesTableSQL =
   "CREATE TABLE challenges (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT, goal_minutes INTEGER DEFAULT 600, start_date TEXT, end_date TEXT, admin_user_id INTEGER, photo_path TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(admin_user_id) REFERENCES users(id))";
 const createChallengeParticipantsTableSQL =
@@ -191,6 +191,10 @@ dbWrapper
           console.log("Adding lng column to activities");
           await db.run("ALTER TABLE activities ADD COLUMN lng REAL");
         }
+        if (!existingColumns.includes("is_boosted")) {
+          console.log("Adding is_boosted column to activities");
+          await db.run("ALTER TABLE activities ADD COLUMN is_boosted INTEGER DEFAULT 0");
+        }
 
         console.log("Database is up and running!");
         sqlite3.verbose();
@@ -222,10 +226,10 @@ const deleteUser = async (id) => {
   await db.run("DELETE FROM users WHERE id = ?", [id]);
 };
 
-const addActivity = async (user_id, duration, date, memo = "", photo_path = null, challenge_id = 1, lat = null, lng = null) => {
+const addActivity = async (user_id, duration, date, memo = "", photo_path = null, challenge_id = 1, lat = null, lng = null, is_boosted = 0) => {
   const result = await db.run(
-    "INSERT INTO activities (user_id, duration, memo, date, photo_path, challenge_id, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    [user_id, duration, memo, date, photo_path, challenge_id, lat, lng]
+    "INSERT INTO activities (user_id, duration, memo, date, photo_path, challenge_id, lat, lng, is_boosted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    [user_id, duration, memo, date, photo_path, challenge_id, lat, lng, is_boosted ? 1 : 0]
   );
   const newActivity = await db.get("SELECT * FROM activities WHERE id = ?", [result.lastID]);
   return newActivity;
