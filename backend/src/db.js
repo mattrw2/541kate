@@ -29,7 +29,7 @@ const createUsersTableSQL =
 const createActivityTableSQL =
   "CREATE TABLE activities (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, " +
   "duration INTEGER NOT NULL, memo TEXT, " +
-  "date TEXT NOT NULL, photo_path TEXT, sus_count INTEGER DEFAULT 0, IS_ARCHIVED INTEGER DEFAULT 0, challenge_id INTEGER DEFAULT 1, is_boosted INTEGER DEFAULT 0, FOREIGN KEY(user_id) REFERENCES users(id))";
+  "date TEXT NOT NULL, photo_path TEXT, sus_count INTEGER DEFAULT 0, IS_ARCHIVED INTEGER DEFAULT 0, challenge_id INTEGER DEFAULT 1, is_boosted INTEGER DEFAULT 0, address TEXT, FOREIGN KEY(user_id) REFERENCES users(id))";
 const createChallengesTableSQL =
   "CREATE TABLE challenges (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT, goal_minutes INTEGER DEFAULT 600, start_date TEXT, end_date TEXT, admin_user_id INTEGER, photo_path TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(admin_user_id) REFERENCES users(id))";
 const createChallengeParticipantsTableSQL =
@@ -195,6 +195,10 @@ dbWrapper
           console.log("Adding is_boosted column to activities");
           await db.run("ALTER TABLE activities ADD COLUMN is_boosted INTEGER DEFAULT 0");
         }
+        if (!existingColumns.includes("address")) {
+          console.log("Adding address column to activities");
+          await db.run("ALTER TABLE activities ADD COLUMN address TEXT");
+        }
 
         console.log("Database is up and running!");
         sqlite3.verbose();
@@ -241,6 +245,10 @@ const incrementSusCount = async (id) => {
 
 const decrementSusCount = async (id) => {
   await db.run("UPDATE activities SET sus_count = MAX(0, sus_count - 1) WHERE id = ?", [id]);
+};
+
+const updateActivityAddress = async (id, address) => {
+  await db.run("UPDATE activities SET address = ? WHERE id = ?", [address, id]);
 };
 
 const deleteActivity = async (id) => {
@@ -438,6 +446,7 @@ module.exports = {
   addUser,
   listUsersByDuration,
   addActivity,
+  updateActivityAddress,
   deleteActivity,
   deleteUser,
   runMigration,

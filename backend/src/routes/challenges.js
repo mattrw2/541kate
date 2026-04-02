@@ -113,6 +113,28 @@ router.get("/:id/activities", async (req, res) => {
   const { id } = req.params;
   try {
     const activities = await db.getChallengeActivities(id);
+    const uncached = activities.filter((a) => a.lat != null && a.lng != null && !a.address);
+    if (uncached.length > 0) {
+      for (const activity of uncached) {
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${activity.lat}&lon=${activity.lng}&format=json`, {
+            headers: { "User-Agent": "541kate-exercise-app/1.0" },
+          });
+          if (!r.ok) continue;
+          const data = await r.json();
+          const a = data.address || {};
+          const parts = [a.road, a.city || a.town || a.village, a.state].filter(Boolean);
+          const address = parts.join(", ") || data.display_name || null;
+          if (address) {
+            await db.updateActivityAddress(activity.id, address);
+            activity.address = address;
+          }
+        } catch (e) {
+          console.error(`Geocoding failed for activity ${activity.id}:`, e);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1100));
+      }
+    }
     return res.json(activities);
   } catch (error) {
     console.error(error);

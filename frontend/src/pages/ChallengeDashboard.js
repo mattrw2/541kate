@@ -36,21 +36,6 @@ const BORDER_COLORS = [
   "rgb(201, 203, 207)",
 ]
 
-const useReverseGeocode = (lat, lng) => {
-  const [address, setAddress] = useState(null)
-  useEffect(() => {
-    if (lat == null || lng == null) return
-    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
-      .then((r) => r.json())
-      .then((data) => {
-        const a = data.address || {}
-        const parts = [a.road, a.city || a.town || a.village, a.state].filter(Boolean)
-        setAddress(parts.join(", ") || data.display_name)
-      })
-      .catch(() => {})
-  }, [lat, lng])
-  return address
-}
 
 const QuickSelect = ({ options, value, onSelect, label }) => (
   <div className="flex flex-wrap gap-2 min-w-0">
@@ -80,7 +65,7 @@ const setSusVote = (userId, activityId, val) => {
 }
 
 const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, currentUser, challengeId }) => {
-  const locationAddress = useReverseGeocode(activity.lat, activity.lng)
+  const locationAddress = activity.address
   const [showFullPhoto, setShowFullPhoto] = useState(false)
   const [susCount, setSusCount] = useState(activity.sus_count || 0)
   const [voted, setVoted] = useState(() => hasVotedSus(currentUser?.id, activity.id))
