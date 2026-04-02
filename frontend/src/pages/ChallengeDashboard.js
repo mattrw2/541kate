@@ -139,66 +139,78 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
 
   return (
     <li className="bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow transition-shadow">
-      <div
-        className={`flex items-start gap-3 px-3 py-2.5 ${activity.photo_path ? "cursor-pointer" : ""}`}
-        onClick={() => activity.photo_path && setShowFullPhoto((v) => !v)}
-      >
+      <div className="flex items-stretch gap-3 px-3 py-2.5">
+        {/* Col 1: date */}
         <div className="flex-shrink-0 text-center w-8 pt-0.5">
           <div className="text-[10px] uppercase tracking-wide text-gray-400">{monthStr}</div>
           <div className="text-lg font-light text-gray-700 leading-tight">{dayStr}</div>
-
         </div>
 
         <div className="w-px bg-yellow-400 self-stretch flex-shrink-0" />
 
-        <div className="flex-1 min-w-0">
-          <div className="text-base font-medium text-gray-800">{activity.username}</div>
-          {activity.memo && (
-            <div className="text-sm text-gray-500 mt-0.5">{activity.memo}</div>
-          )}
-          {activity.lat != null && activity.lng != null && (
-            <a
-              href={`https://www.google.com/maps?q=${activity.lat},${activity.lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="text-xs text-gray-400 hover:text-yellow-500 mt-0.5 block"
-            >
-              📍 {locationAddress || `${activity.lat.toFixed(4)}, ${activity.lng.toFixed(4)}`}
-            </a>
-          )}
-          {activity.photo_path && showFullPhoto && (
-            <img src={`${apiUrl}${activity.photo_path}`} alt="activity" className="mt-2 rounded-md max-w-full" />
-          )}
-        </div>
+        {/* Col 2: header + content */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* Header row */}
+          <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0">
+              <span className="text-base font-medium text-gray-800">{activity.username}</span>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                className="flex items-center gap-0.5 text-gray-400 hover:text-yellow-500 transition-colors"
+                onClick={handleSus}
+                onMouseOver={() => setHovering(true)}
+                onMouseOut={() => setHovering(false)}
+              >
+                <img src={susActive ? "/suspicious.png" : "/suspicious_gray.png"} alt="Sus" width={16} height={16} />
+                {susCount > 0 && <span className="text-xs">{susCount}</span>}
+              </button>
+              <span className="text-base font-semibold text-gray-800 whitespace-nowrap">
+                {activity.duration}<span className="text-xs font-normal text-gray-400 ml-0.5">min</span>
+              </span>
+              {onDelete && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(activity.id) }}
+                  className="text-red-400 hover:text-red-600 transition-colors text-base leading-none p-1"
+                  title="Delete"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {activity.photo_path && !showFullPhoto && (
-            <img src={`${apiUrl}${activity.photo_path}`} alt="thumbnail" className="w-8 h-8 rounded object-cover" />
-          )}
-          <button
-            className="flex items-center gap-0.5 text-gray-400 hover:text-yellow-500 transition-colors"
-            onClick={handleSus}
-            onMouseOver={() => setHovering(true)}
-            onMouseOut={() => setHovering(false)}
-          >
-            <img src={susActive ? "/suspicious.png" : "/suspicious_gray.png"} alt="Sus" width={16} height={16} />
-            {susCount > 0 && <span className="text-xs">{susCount}</span>}
-          </button>
-          {activity.is_boosted ? (
-            <span className="text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-300 rounded px-1.5 py-0.5 whitespace-nowrap">⚡ Boosted</span>
-          ) : null}
-          <span className="text-base font-semibold text-gray-800 whitespace-nowrap">
-            {activity.duration}<span className="text-xs font-normal text-gray-400 ml-0.5">min</span>
-          </span>
-          {onDelete && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onDelete(activity.id) }}
-              className="text-red-400 hover:text-red-600 transition-colors text-base leading-none p-1"
-              title="Delete"
+          {/* Content rows */}
+          {(activity.memo || activity.lat != null || activity.photo_path) && (
+            <div
+              className={`mt-0.5 ${activity.photo_path ? "cursor-pointer" : ""}`}
+              onClick={() => activity.photo_path && setShowFullPhoto((v) => !v)}
             >
-              ✕
-            </button>
+              {activity.memo && (
+                <div className="text-sm text-gray-500">{activity.memo}{activity.is_boosted ? <span title="Boosted" className="ml-1">⚡</span> : null}</div>
+              )}
+              {!activity.memo && activity.is_boosted && (
+                <span title="Boosted">⚡</span>
+              )}
+              {activity.lat != null && activity.lng != null && (
+                <a
+                  href={`https://www.google.com/maps?q=${activity.lat},${activity.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-xs text-gray-400 hover:text-yellow-500 mt-0.5 block"
+                >
+                  📍 {locationAddress || `${activity.lat.toFixed(4)}, ${activity.lng.toFixed(4)}`}
+                </a>
+              )}
+              {activity.photo_path && (
+                <img
+                  src={`${apiUrl}${activity.photo_path}`}
+                  alt={showFullPhoto ? "activity" : "thumbnail"}
+                  className={showFullPhoto ? "mt-2 rounded-md max-w-full" : "w-8 h-8 rounded object-cover mt-1"}
+                />
+              )}
+            </div>
           )}
         </div>
       </div>
