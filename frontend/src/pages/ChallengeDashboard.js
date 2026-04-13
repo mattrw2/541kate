@@ -783,7 +783,7 @@ const { data: activities = [] } = useQuery({
             </div>
             <div className="space-y-3">
               <textarea
-                value={editingPrize?.description || editingPrize?.name || ""}
+                value={editingPrize?.description ?? ""}
                 onChange={(e) => setEditingPrize((p) => ({ ...p, description: e.target.value }))}
                 placeholder="Describe the prize"
                 rows={3}
