@@ -609,7 +609,7 @@ const { data: activities = [] } = useQuery({
                 {prizes.map((prize) => (
                   <li key={prize.id} className="flex items-start justify-between border-b border-gray-200 pb-3">
                     <div>
-                      <p className="text-base font-medium text-gray-800 whitespace-pre-wrap">{prize.riley_chooses ? "🎲 Riley will choose my fate" : prize.name}{prize.username && <span className="text-xs text-gray-400 font-normal ml-1.5">by <span className="text-orange-500">{prize.username}</span></span>}</p>
+                      <p className="text-base font-medium text-gray-800 whitespace-pre-wrap">{prize.riley_chooses ? (prize.description ? `🎲 ${prize.description}` : "🎲 Riley will choose my fate") : prize.name}{prize.username && <span className="text-xs text-gray-400 font-normal ml-1.5">by <span className="text-orange-500">{prize.username}</span></span>}</p>
                     </div>
                     {((prize.riley_chooses && currentUser?.username === "Riley") || (!prize.riley_chooses && (prize.user_id == null || currentUser?.id === prize.user_id))) && (
                       <button onClick={() => setEditingPrize(prize)} className="ml-3 flex-shrink-0 border border-gray-200 rounded px-2.5 py-1 text-xs text-gray-500 hover:border-yellow-500 hover:text-yellow-600 transition-colors">Edit</button>
