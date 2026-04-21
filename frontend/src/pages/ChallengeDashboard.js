@@ -444,7 +444,7 @@ const { data: activities = [], isFetching: activitiesFetching } = useQuery({
             align: "end",
             clamp: true,
             color: "#374151",
-            font: { size: 24, weight: "bold" },
+            font: { size: 24 },
             formatter: (_value, context) => {
               const username = context.chart.data.labels[context.dataIndex]
               return username === "1scott" ? "*" : null
