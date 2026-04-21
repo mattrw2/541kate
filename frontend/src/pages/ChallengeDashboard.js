@@ -11,11 +11,12 @@ import {
   Tooltip,
 } from "chart.js"
 import annotationPlugin from "chartjs-plugin-annotation"
+import ChartDataLabels from "chartjs-plugin-datalabels"
 import { ArrowUpOnSquareIcon, TrophyIcon, BoltIcon, Cog6ToothIcon, ChevronDownIcon, ChevronUpIcon, ChartBarIcon, MagnifyingGlassIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline"
 import { apiUrl } from "../api"
 import { useCurrentUser } from "../UserContext"
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, annotationPlugin)
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, annotationPlugin, ChartDataLabels)
 
 const BG_COLORS = [
   "rgba(255, 99, 132, 0.2)",
@@ -253,7 +254,7 @@ const ChallengeDashboard = () => {
     queryFn: () => fetch(`${apiUrl}/challenges/${id}`).then((r) => r.json()),
   })
 
-const { data: activities = [] } = useQuery({
+const { data: activities = [], isFetching: activitiesFetching } = useQuery({
     queryKey: ["challenge", id, "activities"],
     queryFn: () => fetch(`${apiUrl}/challenges/${id}/activities`).then((r) => r.json()),
   })
@@ -416,21 +417,48 @@ const { data: activities = [] } = useQuery({
     ? {
         indexAxis: "y",
         maintainAspectRatio: false,
+        layout: { padding: { right: 24 } },
         scales: {
-          x: { beginAtZero: true },
+          x: {
+            beginAtZero: true,
+            ticks: { callback: (value) => `${value}h` },
+          },
           y: { beginAtZero: true, grid: { display: false }, ticks: { autoSkip: false } },
         },
         plugins: {
           legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const totalMin = Math.round(context.parsed.x * 60)
+                const h = Math.floor(totalMin / 60)
+                const m = totalMin % 60
+                if (h && m) return `${h}h ${m}m`
+                if (h) return `${h}h`
+                return `${m}m`
+              },
+            },
+          },
+          datalabels: {
+            anchor: "end",
+            align: "end",
+            clamp: true,
+            color: "#374151",
+            font: { size: 24, weight: "bold" },
+            formatter: (_value, context) => {
+              const username = context.chart.data.labels[context.dataIndex]
+              return username === "1scott" ? "*" : null
+            },
+          },
           annotation: {
             annotations: {
               line1: {
                 type: "line",
                 scaleID: "x",
-                value: challenge.goal_minutes,
+                value: challenge.goal_minutes / 60,
                 borderColor: "orange",
                 borderWidth: 2,
-                label: { enabled: true, content: String(challenge.goal_minutes) },
+                label: { enabled: true, content: `${(challenge.goal_minutes / 60).toFixed(1)}h` },
               },
             },
           },
@@ -460,7 +488,7 @@ const { data: activities = [] } = useQuery({
 
   const chartData = {
     labels: activeChartData.map((u) => u.username),
-    datasets: [{ data: activeChartData.map((u) => u.total_duration), backgroundColor: BG_COLORS, borderColor: BORDER_COLORS, borderWidth: 1 }],
+    datasets: [{ data: activeChartData.map((u) => u.total_duration / 60), backgroundColor: BG_COLORS, borderColor: BORDER_COLORS, borderWidth: 1 }],
   }
 
   const formatDate = (dateStr) => {
@@ -567,6 +595,9 @@ const { data: activities = [] } = useQuery({
                     <button onClick={() => setActivitySearch("")} className="absolute right-0 top-0 bottom-0 px-3 text-gray-400 hover:text-gray-600 text-lg">✕</button>
                   )}
                 </div>
+                {activitiesFetching && (
+                  <div className="h-0.5 bg-yellow-500 animate-pulse rounded-full mb-3" />
+                )}
                 <ul className="space-y-2">
                   {(activitySearch ? activities : showAllActivities ? activities.filter((a) => !a.IS_ARCHIVED) : activities.filter((a) => !a.IS_ARCHIVED).slice(0, 20)).filter((a) => !activitySearch || a.username?.toLowerCase().includes(activitySearch.toLowerCase()) || a.memo?.toLowerCase().includes(activitySearch.toLowerCase())).map((activity) => (
                     <ActivityItem

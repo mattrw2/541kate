@@ -345,7 +345,7 @@ const getChallengeActivities = async (challenge_id) => {
     `SELECT a.*, u.username FROM activities a
     JOIN users u ON a.user_id = u.id
     WHERE a.challenge_id = ?
-    ORDER BY a.date DESC, a.id DESC`,
+    ORDER BY a.id DESC`,
     [challenge_id]
   );
   const comments = await db.all(
