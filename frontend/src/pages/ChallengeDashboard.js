@@ -10,13 +10,12 @@ import {
   BarElement,
   Tooltip,
 } from "chart.js"
-import annotationPlugin from "chartjs-plugin-annotation"
 import ChartDataLabels from "chartjs-plugin-datalabels"
 import { ArrowUpOnSquareIcon, TrophyIcon, BoltIcon, Cog6ToothIcon, ChevronDownIcon, ChevronUpIcon, ChartBarIcon, MagnifyingGlassIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline"
 import { apiUrl } from "../api"
 import { useCurrentUser } from "../UserContext"
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, annotationPlugin, ChartDataLabels)
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, ChartDataLabels)
 
 const BG_COLORS = [
   "rgba(255, 99, 132, 0.2)",
@@ -450,21 +449,27 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
               return username === "1scott" ? "*" : null
             },
           },
-          annotation: {
-            annotations: {
-              line1: {
-                type: "line",
-                scaleID: "x",
-                value: challenge.goal_minutes / 60,
-                borderColor: "orange",
-                borderWidth: 2,
-                label: { enabled: true, content: `${(challenge.goal_minutes / 60).toFixed(1)}h` },
-              },
-            },
-          },
         },
       }
     : null
+
+  const goalLinePlugin = {
+    id: "goalLine",
+    afterDraw: (chart) => {
+      if (!challenge) return
+      const { ctx, chartArea, scales } = chart
+      const x = scales.x.getPixelForValue(challenge.goal_minutes / 60)
+      if (x < chartArea.left || x > chartArea.right) return
+      ctx.save()
+      ctx.beginPath()
+      ctx.moveTo(x, chartArea.top)
+      ctx.lineTo(x, chartArea.bottom)
+      ctx.lineWidth = 2
+      ctx.strokeStyle = "orange"
+      ctx.stroke()
+      ctx.restore()
+    },
+  }
 
   const allTimeChartData = (() => {
     const totals = {}
@@ -568,7 +573,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                     <span className="text-xs text-gray-500">Today only</span>
                   </div>
                   <div style={{ height: `${Math.max(120, Math.min(activeChartData.length * 60 + 40, 600))}px` }}>
-                    <Bar data={chartData} options={chartOptions} />
+                    <Bar data={chartData} options={chartOptions} plugins={[goalLinePlugin]} />
                   </div>
                 </div>
               )}
