@@ -254,7 +254,7 @@ const ChallengeDashboard = () => {
     queryFn: () => fetch(`${apiUrl}/challenges/${id}`).then((r) => r.json()),
   })
 
-const { data: activities = [], isFetching: activitiesFetching } = useQuery({
+const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
     queryKey: ["challenge", id, "activities"],
     queryFn: () => fetch(`${apiUrl}/challenges/${id}/activities`).then((r) => r.json()),
   })
