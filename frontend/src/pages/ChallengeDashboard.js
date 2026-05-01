@@ -192,6 +192,7 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
                 <img
                   src={`${apiUrl}${activity.photo_path}`}
                   alt={showFullPhoto ? "activity" : "thumbnail"}
+                  loading="lazy"
                   className={showFullPhoto ? "mt-2 rounded-md max-w-full" : "w-8 h-8 rounded object-cover mt-1"}
                 />
               )}
