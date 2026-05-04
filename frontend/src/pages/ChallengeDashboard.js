@@ -64,7 +64,7 @@ const setSusVote = (userId, activityId, val) => {
   localStorage.setItem(getSusKey(userId), JSON.stringify(updated))
 }
 
-const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, currentUser, challengeId }) => {
+const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, currentUser, challengeId, isComplete }) => {
   const locationAddress = activity.address
   const [showFullPhoto, setShowFullPhoto] = useState(false)
   const [susCount, setSusCount] = useState(activity.sus_count || 0)
@@ -141,15 +141,17 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
               <span className="text-base font-medium text-gray-800">{activity.username}</span>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                className="flex items-center gap-0.5 text-gray-400 hover:text-yellow-500 transition-colors"
-                onClick={handleSus}
-                onMouseOver={() => setHovering(true)}
-                onMouseOut={() => setHovering(false)}
-              >
-                <img src={susActive ? "/suspicious.png" : "/suspicious_gray.png"} alt="Sus" width={16} height={16} />
-                {susCount > 0 && <span className="text-xs">{susCount}</span>}
-              </button>
+              {!isComplete && (
+                <button
+                  className="flex items-center gap-0.5 text-gray-400 hover:text-yellow-500 transition-colors"
+                  onClick={handleSus}
+                  onMouseOver={() => setHovering(true)}
+                  onMouseOut={() => setHovering(false)}
+                >
+                  <img src={susActive ? "/suspicious.png" : "/suspicious_gray.png"} alt="Sus" width={16} height={16} />
+                  {susCount > 0 && <span className="text-xs">{susCount}</span>}
+                </button>
+              )}
               <span className="text-base font-semibold text-gray-800 whitespace-nowrap">
                 {activity.duration}<span className="text-xs font-normal text-gray-400 ml-0.5">min</span>
               </span>
@@ -211,7 +213,7 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
                 <span className="ml-1">{c.text}</span>
               </div>
             ))}
-            {currentUser && (
+            {currentUser && !isComplete && (
               <div className="flex gap-2 mt-1">
                 <input
                   ref={commentInputRef}
@@ -234,7 +236,7 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
           </div>
         </div>
       )}
-      {currentUser && comments.length === 0 && !showComments && (
+      {currentUser && !isComplete && comments.length === 0 && !showComments && (
         <button onClick={() => { setShowComments(true); setTimeout(() => commentInputRef.current?.focus(), 0) }} className="px-3 pb-2 flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600 transition-colors">
           <ChatBubbleLeftIcon className="w-3.5 h-3.5" />
           comment
@@ -265,6 +267,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
   })
 
   const today = new Date().toLocaleDateString("en-CA")
+  const isComplete = !!(challenge?.end_date && today > challenge.end_date)
   const [showForm, setShowForm] = useState(false)
   const [showAllActivities, setShowAllActivities] = useState(false)
   const [activitySearch, setActivitySearch] = useState("")
@@ -505,7 +508,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   return (
     <div className="max-w-3xl mx-auto pb-20">
-      {activeTab === "dashboard" && currentUser && prizesLoaded && !prizes.some((p) => p.user_id === currentUser.id) && (
+      {activeTab === "dashboard" && currentUser && prizesLoaded && !prizes.some((p) => p.user_id === currentUser.id) && !isComplete && (
         <div className="mt-1 mb-4 bg-orange-100 px-4 py-3 flex items-center justify-between">
           <p className="text-sm font-medium text-orange-900">Add a prize to join this challenge</p>
           <button
@@ -522,10 +525,11 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
           <div className="flex items-center justify-between">
             <button onClick={() => setShowInfo(v => !v)} className="flex items-center gap-1.5 font-semibold text-lg text-gray-900">
               {challenge.name}
+              {isComplete && <span className="text-xs font-medium uppercase tracking-wide text-gray-500 bg-gray-100 rounded px-1.5 py-0.5">Completed</span>}
               {showInfo ? <ChevronUpIcon className="w-4 h-4 text-gray-400" /> : <ChevronDownIcon className="w-4 h-4 text-gray-400" />}
             </button>
             <div className="flex gap-1.5 items-center">
-{prizes.some((p) => p.user_id === currentUser?.id) && (
+{prizes.some((p) => p.user_id === currentUser?.id) && !isComplete && (
                 <button onClick={() => setShowShare(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium flex items-center gap-1">
                   <ArrowUpOnSquareIcon className="w-3.5 h-3.5" />
                   Invite
@@ -581,7 +585,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
               <div className="mx-4 mt-4 border-t border-gray-200 pt-4 min-h-screen">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Activities</h3>
-                  {currentUser && (
+                  {currentUser && !isComplete && (
                     <button onClick={() => setShowForm(true)} disabled={prizesLoaded && !prizes.some((p) => p.user_id === currentUser.id)} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
                       <BoltIcon className="w-4 h-4" />
                       Add Activity
@@ -612,8 +616,9 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                       onIncrementSus={(aid) => incrementSus.mutate(aid)}
                       onDecrementSus={(aid) => decrementSus.mutate(aid)}
                       currentUser={currentUser}
-                      onDelete={currentUser?.id === activity.user_id ? handleDeleteActivity : null}
+                      onDelete={currentUser?.id === activity.user_id && !isComplete ? handleDeleteActivity : null}
                       challengeId={id}
+                      isComplete={isComplete}
                     />
                   ))}
                 </ul>
@@ -631,7 +636,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
             <div className="mx-4 mt-2">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Prizes</h3>
-                {currentUser && !prizes.some((p) => p.user_id === currentUser.id) && (
+                {currentUser && !prizes.some((p) => p.user_id === currentUser.id) && !isComplete && (
                   <button
                     onClick={() => setShowPrizeForm(true)}
                     className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium flex items-center gap-1.5"
@@ -648,7 +653,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                     <div>
                       <p className="text-base font-medium text-gray-800 whitespace-pre-wrap">{prize.riley_chooses ? (prize.description ? `🎲 ${prize.description}` : "🎲 Riley will choose my fate") : prize.name}{prize.username && <span className="text-xs text-gray-400 font-normal ml-1.5">by <span className="text-orange-500">{prize.username}</span></span>}</p>
                     </div>
-                    {((prize.riley_chooses && currentUser?.username === "Riley") || (!prize.riley_chooses && (prize.user_id == null || currentUser?.id === prize.user_id))) && (
+                    {!isComplete && ((prize.riley_chooses && currentUser?.username === "Riley") || (!prize.riley_chooses && (prize.user_id == null || currentUser?.id === prize.user_id))) && (
                       <button onClick={() => setEditingPrize(prize)} className="ml-3 flex-shrink-0 border border-gray-200 rounded px-2.5 py-1 text-xs text-gray-500 hover:border-yellow-500 hover:text-yellow-600 transition-colors">Edit</button>
                     )}
                   </li>
