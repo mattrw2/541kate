@@ -268,6 +268,22 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const today = new Date().toLocaleDateString("en-CA")
   const isComplete = !!(challenge?.end_date && today > challenge.end_date)
+
+  const userTotals = (() => {
+    const totals = {}
+    activities.filter((a) => !a.IS_ARCHIVED).forEach((a) => {
+      if (!totals[a.user_id]) totals[a.user_id] = { user_id: a.user_id, username: a.username, total_duration: 0 }
+      totals[a.user_id].total_duration += a.duration
+    })
+    return Object.values(totals).sort((a, b) => b.total_duration - a.total_duration)
+  })()
+  const eligibleUsers = userTotals.filter((u) => u.total_duration >= (challenge?.goal_minutes || 0))
+  const claimedUserIds = new Set(prizes.filter((p) => p.winner_user_id).map((p) => p.winner_user_id))
+  const nextPicker = isComplete ? eligibleUsers.find((u) => {
+    if (claimedUserIds.has(u.user_id)) return false
+    return prizes.some((p) => !p.winner_user_id && p.user_id !== u.user_id)
+  }) : null
+  const isMyTurn = nextPicker?.user_id === currentUser?.id
   const [showForm, setShowForm] = useState(false)
   const [showAllActivities, setShowAllActivities] = useState(false)
   const [activitySearch, setActivitySearch] = useState("")
@@ -373,6 +389,18 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "prizes"] })
       setPrizeForm({ name: "", description: "", riley_chooses: false })
       setShowPrizeForm(false)
+    },
+  })
+
+  const claimPrize = useMutation({
+    mutationFn: (prizeId) =>
+      fetch(`${apiUrl}/challenges/${id}/prizes/${prizeId}/claim`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: currentUser?.id }),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["challenge", id, "prizes"] })
     },
   })
 
@@ -519,6 +547,17 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
           </button>
         </div>
       )}
+      {activeTab === "dashboard" && isComplete && isMyTurn && (
+        <div className="mt-1 mb-4 bg-orange-100 px-4 py-3 flex items-center justify-between">
+          <p className="text-sm font-medium text-orange-900">Your turn to pick a prize</p>
+          <button
+            onClick={() => setActiveTab("prizes")}
+            className="text-sm font-semibold text-orange-900 underline ml-3 flex-shrink-0 hover:text-orange-700"
+          >
+            Pick Prize
+          </button>
+        </div>
+      )}
       {/* Persistent header */}
       {challenge && activeTab === "dashboard" && (
         <div className="px-4 pb-2">
@@ -652,9 +691,17 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                   <li key={prize.id} className="flex items-start justify-between border-b border-gray-200 pb-3">
                     <div>
                       <p className="text-base font-medium text-gray-800 whitespace-pre-wrap">{prize.riley_chooses ? (prize.description ? `🎲 ${prize.description}` : "🎲 Riley will choose my fate") : prize.name}{prize.username && <span className="text-xs text-gray-400 font-normal ml-1.5">by <span className="text-orange-500">{prize.username}</span></span>}</p>
+                      {prize.winner_username && (
+                        <p className="text-xs text-gray-500 mt-1">🏆 selected by <span className="font-medium text-gray-700">{prize.winner_username}</span></p>
+                      )}
                     </div>
                     {!isComplete && ((prize.riley_chooses && currentUser?.username === "Riley") || (!prize.riley_chooses && (prize.user_id == null || currentUser?.id === prize.user_id))) && (
                       <button onClick={() => setEditingPrize(prize)} className="ml-3 flex-shrink-0 border border-gray-200 rounded px-2.5 py-1 text-xs text-gray-500 hover:border-yellow-500 hover:text-yellow-600 transition-colors">Edit</button>
+                    )}
+                    {isComplete && isMyTurn && !prize.winner_user_id && prize.user_id !== currentUser?.id && (
+                      <button onClick={() => claimPrize.mutate(prize.id)} disabled={claimPrize.isPending} className="ml-3 flex-shrink-0 bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1 text-xs font-medium disabled:opacity-50">
+                        Pick
+                      </button>
                     )}
                   </li>
                 ))}

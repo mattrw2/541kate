@@ -35,7 +35,7 @@ const createChallengesTableSQL =
 const createChallengeParticipantsTableSQL =
   "CREATE TABLE challenge_participants (id INTEGER PRIMARY KEY AUTOINCREMENT, challenge_id INTEGER NOT NULL, user_id INTEGER NOT NULL, UNIQUE(challenge_id, user_id), FOREIGN KEY(challenge_id) REFERENCES challenges(id), FOREIGN KEY(user_id) REFERENCES users(id))";
 const createPrizesTableSQL =
-  "CREATE TABLE prizes (id INTEGER PRIMARY KEY AUTOINCREMENT, challenge_id INTEGER NOT NULL, name TEXT NOT NULL, description TEXT, user_id INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(challenge_id) REFERENCES challenges(id), FOREIGN KEY(user_id) REFERENCES users(id))";
+  "CREATE TABLE prizes (id INTEGER PRIMARY KEY AUTOINCREMENT, challenge_id INTEGER NOT NULL, name TEXT NOT NULL, description TEXT, user_id INTEGER, winner_user_id INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(challenge_id) REFERENCES challenges(id), FOREIGN KEY(user_id) REFERENCES users(id))";
 const createActivityCommentsTableSQL =
   "CREATE TABLE activity_comments (id INTEGER PRIMARY KEY AUTOINCREMENT, activity_id INTEGER NOT NULL, user_id INTEGER, text TEXT NOT NULL, lat REAL, lng REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(activity_id) REFERENCES activities(id), FOREIGN KEY(user_id) REFERENCES users(id))";
 
@@ -128,6 +128,10 @@ dbWrapper
         if (!prizeColumns.map((c) => c.name).includes("riley_chooses")) {
           console.log("Adding riley_chooses column to prizes");
           await db.run("ALTER TABLE prizes ADD COLUMN riley_chooses INTEGER NOT NULL DEFAULT 0");
+        }
+        if (!prizeColumns.map((c) => c.name).includes("winner_user_id")) {
+          console.log("Adding winner_user_id column to prizes");
+          await db.run("ALTER TABLE prizes ADD COLUMN winner_user_id INTEGER");
         }
 
         // Check and add photo_path to challenges
@@ -379,8 +383,9 @@ const getChallengeDuration = async (challenge_id) => {
 
 const getPrizes = async (challenge_id) => {
   return await db.all(
-    `SELECT p.*, u.username FROM prizes p
+    `SELECT p.*, u.username, w.username as winner_username FROM prizes p
     LEFT JOIN users u ON p.user_id = u.id
+    LEFT JOIN users w ON p.winner_user_id = w.id
     WHERE p.challenge_id = ?
     ORDER BY p.created_at DESC`,
     [challenge_id]
@@ -414,6 +419,23 @@ const updatePrize = async (id, name, description) => {
 
 const deletePrize = async (id) => {
   await db.run("DELETE FROM prizes WHERE id = ?", [id]);
+};
+
+const claimPrize = async (prizeId, user_id) => {
+  const result = await db.run(
+    "UPDATE prizes SET winner_user_id = ? WHERE id = ? AND winner_user_id IS NULL AND (user_id IS NULL OR user_id != ?)",
+    [user_id, prizeId, user_id]
+  );
+  if (result.changes === 0) {
+    throw new Error("Prize cannot be claimed");
+  }
+  return await db.get(
+    `SELECT p.*, u.username, w.username as winner_username FROM prizes p
+    LEFT JOIN users u ON p.user_id = u.id
+    LEFT JOIN users w ON p.winner_user_id = w.id
+    WHERE p.id = ?`,
+    [prizeId]
+  );
 };
 
 const getActivityComments = async (activity_id) => {
@@ -466,6 +488,7 @@ module.exports = {
   addPrize,
   updatePrize,
   deletePrize,
+  claimPrize,
   getActivityComments,
   addActivityComment,
 };

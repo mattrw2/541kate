@@ -197,6 +197,20 @@ router.put("/:id/prizes/:prizeId", async (req, res) => {
   }
 });
 
+// POST /:id/prizes/:prizeId/claim
+router.post("/:id/prizes/:prizeId/claim", async (req, res) => {
+  const { prizeId } = req.params;
+  const { user_id } = req.body;
+  if (!user_id) return res.status(400).send("user_id is required.");
+  try {
+    const prize = await db.claimPrize(prizeId, user_id);
+    return res.json(prize);
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send("Prize cannot be claimed.");
+  }
+});
+
 // DELETE /:id/prizes/:prizeId
 router.delete("/:id/prizes/:prizeId", async (req, res) => {
   const { prizeId } = req.params;
