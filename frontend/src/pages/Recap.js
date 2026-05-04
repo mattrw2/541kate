@@ -177,13 +177,13 @@ const Recap = () => {
       sub: `${topUser.total} minutes`
     },
     topDay && {
-      photo: "https://five41kate.onrender.com/1776186890498-image.jpg",
+      photo: "https://five41kate.onrender.com/1777600628808-IMG_9168.jpeg",
       label: "Day With the Most Minutes",
       value: formatDate(topDay.date),
       sub: `${topDay.total} minutes`
     },
     topDayCount && {
-      photo: "https://five41kate.onrender.com/1776646292958-IMG_0150.jpeg",
+      photo: "https://five41kate.onrender.com/1777592264034-image.jpg",
       label: "Day With the Most Activities",
       value: formatDate(topDayCount.date),
       sub: `${topDayCount.count} activities`
@@ -195,7 +195,7 @@ const Recap = () => {
       sub: `${mostActiveUser.count} activities`
     },
     topUserDay && {
-      photo: "https://five41kate.onrender.com/1777592264034-image.jpg",
+      photo: "https://five41kate.onrender.com/1777873890811-IMG_2086.jpg",
       label: "Biggest Single Day",
       value: topUserDay.username,
       sub: `${topUserDay.total} minutes on ${formatDate(topUserDay.date)}${
