@@ -1,17 +1,8 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
+import { PauseIcon, PlayIcon } from "@heroicons/react/24/solid"
 import { apiUrl } from "../api"
-
-const PHOTOS = [
-  "https://five41kate.onrender.com/1775516111022-IMG_7626.jpeg",
-  "https://five41kate.onrender.com/1777869903283-IMG_9105.jpg",
-  "",
-  "",
-  "",
-  "",
-  "",
-]
 
 const SLIDE_DURATION_MS = 5000
 
@@ -146,33 +137,103 @@ const Recap = () => {
   const topCommenter = commenterCounts[0]
 
   const slides = [
-    { label: "Total Number of Minutes", value: totalMinutes.toLocaleString(), sub: "minutes app-wide" },
-    topUser && { label: "Winner", value: topUser.username, sub: `${topUser.total} minutes` },
-    topDay && { label: "Day With the Most Minutes", value: formatDate(topDay.date), sub: `${topDay.total} minutes` },
-    topDayCount && { label: "Day With the Most Activities", value: formatDate(topDayCount.date), sub: `${topDayCount.count} activities` },
-    mostActiveUser && { label: "Most Activities Logged", value: mostActiveUser.username, sub: `${mostActiveUser.count} activities` },
-    topUserDay && { label: "Biggest Single Day", value: topUserDay.username, sub: `${topUserDay.total} minutes on ${formatDate(topUserDay.date)}` },
-    siteAbuser && { label: "Site Abuser", value: siteAbuser.username, sub: `Posted ${siteAbuser.count} 0-minute activities. Really you couldn't have done 1 minute of work?` },
-    susUser && { label: "Most Sus'd User", value: susUser.username, sub: `${susUser.total} sus votes` },
-    susActivity && { label: "Most Sus'd Activity", value: susActivity.username, sub: `${susActivity.sus_count} sus votes${susActivity.memo ? ` for "${susActivity.memo}"` : ""}` },
-    topCommenter && { label: "Most Comments", value: topCommenter.username, sub: `${topCommenter.count} comments` },
-    topCategory && { label: "Most Popular Activity", value: topCategory[0], sub: `${topCategory[1]} times` },
+    {
+      photo: "https://five41kate.onrender.com/1775516111022-IMG_7626.jpeg",
+      label: "Total Number of Minutes",
+      value: (totalMinutes < 100 ? totalMinutes : Math.round(totalMinutes / 100) * 100).toLocaleString(),
+      sub: "minutes app-wide",
+    },
+    topUser && {
+      photo: "https://five41kate.onrender.com/1777869903283-IMG_9105.jpg",
+      label: "Winner",
+      value: topUser.username,
+      sub: `${topUser.total} minutes`,
+    },
+    topDay && {
+      photo: "https://five41kate.onrender.com/1777600628808-IMG_9168.jpeg",
+      label: "Day With the Most Minutes",
+      value: formatDate(topDay.date),
+      sub: `${topDay.total} minutes`,
+    },
+    topDayCount && {
+      photo: "",
+      label: "Day With the Most Activities",
+      value: formatDate(topDayCount.date),
+      sub: `${topDayCount.count} activities`,
+    },
+    mostActiveUser && {
+      photo: "https://five41kate.onrender.com/1776790563534-IMG_7413.jpeg",
+      label: "Most Activities Logged",
+      value: mostActiveUser.username,
+      sub: `${mostActiveUser.count} activities`,
+    },
+    topUserDay && {
+      photo: "",
+      label: "Biggest Single Day",
+      value: topUserDay.username,
+      sub: `${topUserDay.total} minutes on ${formatDate(topUserDay.date)}${userDayTotals[1] ? ` | runner-up: ${userDayTotals[1].username} (${userDayTotals[1].total} min on ${formatDate(userDayTotals[1].date)})` : ""}`,
+    },
+    siteAbuser && {
+      photo: "https://five41kate.onrender.com/1777082326330-IMG_0159.jpeg",
+      label: "Site Abuser",
+      value: siteAbuser.username,
+      sub: `Posted ${siteAbuser.count} 0-minute activities | Really you couldn't have done 1 minute of work?`,
+    },
+    susUser && {
+      photo: "",
+      label: "Most Sus'd User",
+      value: susUser.username,
+      sub: `${susUser.total} sus votes`,
+    },
+    susActivity && {
+      photo: "https://five41kate.onrender.com/1776210612786-IMG_2359.jpeg",
+      label: "Most Sus'd Activity",
+      value: susActivity.username,
+      sub: `${susActivity.sus_count} sus votes${susActivity.memo ? ` for "${susActivity.memo}"` : ""}`,
+    },
+    topCommenter && {
+      photo: "https://five41kate.onrender.com/1777164572298-IMG_2826.jpeg",
+      label: "Most Comments",
+      value: topCommenter.username,
+      sub: `${topCommenter.count} comments | We knew it would be someone starved for social media`,
+    },
+    topCategory && {
+      photo: "https://five41kate.onrender.com/1776107253115-IMG_1037.jpeg",
+      label: "Most Popular Activity",
+      value: topCategory[0],
+      sub: `${topCategory[1]} times | Is brisking a word?`,
+    },
   ].filter(Boolean)
 
   const [idx, setIdx] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const remainingRef = useRef(SLIDE_DURATION_MS)
+  const startedAtRef = useRef(null)
 
   useEffect(() => {
-    if (slides.length === 0) return
+    remainingRef.current = SLIDE_DURATION_MS
+    startedAtRef.current = null
+  }, [idx])
+
+  useEffect(() => {
+    if (slides.length === 0 || isPaused) {
+      if (startedAtRef.current != null) {
+        remainingRef.current = Math.max(0, remainingRef.current - (Date.now() - startedAtRef.current))
+        startedAtRef.current = null
+      }
+      return
+    }
+    startedAtRef.current = Date.now()
     const t = setTimeout(() => {
       setIdx((i) => Math.min(i + 1, slides.length - 1))
-    }, SLIDE_DURATION_MS)
+    }, remainingRef.current)
     return () => clearTimeout(t)
-  }, [idx, slides.length])
+  }, [idx, slides.length, isPaused])
 
   if (!challenge || !isComplete || slides.length === 0) return null
 
   const slide = slides[idx]
-  const photo = PHOTOS[idx] || ""
+  const photo = slide.photo || ""
 
   const handleClick = (e) => {
     const x = e.clientX - e.currentTarget.getBoundingClientRect().left
@@ -199,11 +260,20 @@ const Recap = () => {
               style={{
                 width: i < idx ? "100%" : "0%",
                 animation: i === idx ? `recapProgress ${SLIDE_DURATION_MS}ms linear forwards` : "none",
+                animationPlayState: i === idx && isPaused ? "paused" : "running",
               }}
             />
           </div>
         ))}
       </div>
+
+      <button
+        onClick={(e) => { e.stopPropagation(); setIsPaused((p) => !p) }}
+        className="absolute top-4 left-4 text-white z-30 w-8 h-8 flex items-center justify-center"
+        aria-label={isPaused ? "Play" : "Pause"}
+      >
+        {isPaused ? <PlayIcon className="w-5 h-5" /> : <PauseIcon className="w-5 h-5" />}
+      </button>
 
       <button
         onClick={(e) => { e.stopPropagation(); navigate(`/challenge/${id}`) }}
