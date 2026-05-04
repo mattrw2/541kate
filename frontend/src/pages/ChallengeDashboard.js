@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Dialog } from "@headlessui/react"
 import { Bar } from "react-chartjs-2"
@@ -248,6 +248,7 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
 
 const ChallengeDashboard = () => {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { currentUser } = useCurrentUser()
   const queryClient = useQueryClient()
 
@@ -561,7 +562,13 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
       )}
       {activeTab === "dashboard" && isWaitingForTurn && (
         <div className="mt-1 mb-4 bg-orange-100 px-4 py-3 flex items-center justify-between">
-          <p className="text-sm font-medium text-orange-900">Waiting for {nextPicker.username} to pick a prize. Check back soon.</p>
+          <p className="text-sm font-medium text-orange-900">Waiting for {nextPicker.username} to pick a prize. Check back soon or check out the highlights.</p>
+          <button
+            onClick={() => navigate(`/challenge/${id}/recap`)}
+            className="text-sm font-semibold text-orange-900 underline ml-3 flex-shrink-0 hover:text-orange-700"
+          >
+            Highlights
+          </button>
         </div>
       )}
       {/* Persistent header */}
@@ -574,7 +581,12 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                 {showInfo ? <ChevronUpIcon className="w-4 h-4 text-gray-400 flex-shrink-0" /> : <ChevronDownIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />}
               </button>
               {isComplete && (
-                <span className="text-xs font-medium uppercase tracking-wide text-gray-500 bg-gray-100 rounded px-1.5 py-0.5">Completed</span>
+                <button
+                  onClick={() => navigate(`/challenge/${id}/recap`)}
+                  className="text-xs font-medium text-white bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 rounded px-1.5 py-0.5"
+                >
+                  Highlights
+                </button>
               )}
             </div>
             <div className="flex gap-1.5 items-center">
