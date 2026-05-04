@@ -284,6 +284,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
     return prizes.some((p) => !p.winner_user_id && p.user_id !== u.user_id)
   }) : null
   const isMyTurn = nextPicker?.user_id === currentUser?.id
+  const isWaitingForTurn = isComplete && !isMyTurn && !!nextPicker && !!currentUser && !claimedUserIds.has(currentUser.id) && eligibleUsers.some((u) => u.user_id === currentUser.id)
   const [showForm, setShowForm] = useState(false)
   const [showAllActivities, setShowAllActivities] = useState(false)
   const [activitySearch, setActivitySearch] = useState("")
@@ -556,6 +557,11 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
           >
             Pick Prize
           </button>
+        </div>
+      )}
+      {activeTab === "dashboard" && isWaitingForTurn && (
+        <div className="mt-1 mb-4 bg-orange-100 px-4 py-3 flex items-center justify-between">
+          <p className="text-sm font-medium text-orange-900">Waiting for {nextPicker.username} to pick a prize. Check back soon.</p>
         </div>
       )}
       {/* Persistent header */}
