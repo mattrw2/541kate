@@ -717,7 +717,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                         <p className="text-xs text-gray-500 mt-1">🏆 selected by <span className="font-medium text-gray-700">{prize.winner_username}</span></p>
                       )}
                     </div>
-                    {!isComplete && ((prize.riley_chooses && currentUser?.username === "Riley") || (!prize.riley_chooses && (prize.user_id == null || currentUser?.id === prize.user_id))) && (
+                    {!prize.winner_user_id && ((prize.riley_chooses && currentUser?.username === "Riley") || (!prize.riley_chooses && (prize.user_id == null || currentUser?.id === prize.user_id))) && (
                       <button onClick={() => setEditingPrize(prize)} className="ml-3 flex-shrink-0 border border-gray-200 rounded px-2.5 py-1 text-xs text-gray-500 hover:border-yellow-500 hover:text-yellow-600 transition-colors">Edit</button>
                     )}
                     {isComplete && isMyTurn && !prize.winner_user_id && prize.user_id !== currentUser?.id && (
