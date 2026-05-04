@@ -562,7 +562,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
       )}
       {activeTab === "dashboard" && isWaitingForTurn && (
         <div className="mt-1 mb-4 bg-orange-100 px-4 py-3 flex items-center justify-between">
-          <p className="text-sm font-medium text-orange-900">Waiting for {nextPicker.username} to pick a prize. Check back soon or check out the highlights.</p>
+          <p className="text-sm font-medium text-orange-900">Waiting for {nextPicker.username} to pick a prize. Check back soon or review the highlights.</p>
           <button
             onClick={() => navigate(`/challenge/${id}/recap`)}
             className="text-sm font-semibold text-orange-900 underline ml-3 flex-shrink-0 hover:text-orange-700"
