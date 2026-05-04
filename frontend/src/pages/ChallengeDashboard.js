@@ -568,11 +568,15 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
       {challenge && activeTab === "dashboard" && (
         <div className="px-4 pb-2">
           <div className="flex items-center justify-between">
-            <button onClick={() => setShowInfo(v => !v)} className="flex items-center gap-1.5 font-semibold text-lg text-gray-900">
-              {challenge.name}
-              {isComplete && <span className="text-xs font-medium uppercase tracking-wide text-gray-500 bg-gray-100 rounded px-1.5 py-0.5">Completed</span>}
-              {showInfo ? <ChevronUpIcon className="w-4 h-4 text-gray-400" /> : <ChevronDownIcon className="w-4 h-4 text-gray-400" />}
-            </button>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <button onClick={() => setShowInfo(v => !v)} className="flex items-center gap-1.5 font-semibold text-lg text-gray-900 min-w-0">
+                <span className="truncate">{challenge.name}</span>
+                {showInfo ? <ChevronUpIcon className="w-4 h-4 text-gray-400 flex-shrink-0" /> : <ChevronDownIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+              </button>
+              {isComplete && (
+                <span className="text-xs font-medium uppercase tracking-wide text-gray-500 bg-gray-100 rounded px-1.5 py-0.5">Completed</span>
+              )}
+            </div>
             <div className="flex gap-1.5 items-center">
 {prizes.some((p) => p.user_id === currentUser?.id) && !isComplete && (
                 <button onClick={() => setShowShare(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium flex items-center gap-1">

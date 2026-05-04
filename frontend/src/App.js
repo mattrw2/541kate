@@ -10,6 +10,7 @@ import Challenges from "./pages/Challenges";
 import CreateChallenge from "./pages/CreateChallenge";
 import ChallengeDashboard from "./pages/ChallengeDashboard";
 import ManageChallenge from "./pages/ManageChallenge";
+import Recap from "./pages/Recap";
 
 const App = () => (
   <Router>
@@ -25,6 +26,7 @@ const App = () => (
         <Route exact path="/challenge/new" element={<CreateChallenge />} />
         <Route exact path="/challenge/:id" element={<ChallengeDashboard />} />
         <Route exact path="/challenge/:id/manage" element={<ManageChallenge />} />
+        <Route exact path="/challenge/:id/recap" element={<Recap />} />
       </Routes>
     </Shell>
   </Router>
