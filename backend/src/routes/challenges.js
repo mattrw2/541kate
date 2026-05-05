@@ -169,14 +169,14 @@ router.get("/:id/prizes", async (req, res) => {
 // POST /:id/prizes
 router.post("/:id/prizes", async (req, res) => {
   const { id } = req.params;
-  const { name, description, user_id, riley_chooses } = req.body;
-  if (!name && !riley_chooses) {
+  const { name, description, user_id } = req.body;
+  if (!name) {
     return res.status(400).send("Name is required.");
   }
   try {
     const existing = await db.getUserPrizeForChallenge(id, user_id);
     if (existing) return res.status(400).send("You have already added a prize to this challenge.");
-    const prize = await db.addPrize(id, riley_chooses ? "Riley will choose my fate" : name, description, user_id, riley_chooses);
+    const prize = await db.addPrize(id, name, description, user_id);
     return res.json(prize);
   } catch (error) {
     console.error(error);

@@ -123,12 +123,7 @@ dbWrapper
           await db.run(createPrizesTableSQL);
         }
 
-        // Check and add riley_chooses to prizes
         const prizeColumns = await db.all("PRAGMA table_info(prizes)");
-        if (!prizeColumns.map((c) => c.name).includes("riley_chooses")) {
-          console.log("Adding riley_chooses column to prizes");
-          await db.run("ALTER TABLE prizes ADD COLUMN riley_chooses INTEGER NOT NULL DEFAULT 0");
-        }
         if (!prizeColumns.map((c) => c.name).includes("winner_user_id")) {
           console.log("Adding winner_user_id column to prizes");
           await db.run("ALTER TABLE prizes ADD COLUMN winner_user_id INTEGER");
@@ -396,10 +391,10 @@ const getUserPrizeForChallenge = async (challenge_id, user_id) => {
   return await db.get("SELECT id FROM prizes WHERE challenge_id = ? AND user_id = ?", [challenge_id, user_id]);
 };
 
-const addPrize = async (challenge_id, name, description, user_id, riley_chooses) => {
+const addPrize = async (challenge_id, name, description, user_id) => {
   const result = await db.run(
-    "INSERT INTO prizes (challenge_id, name, description, user_id, riley_chooses) VALUES (?, ?, ?, ?, ?)",
-    [challenge_id, name, description, user_id, riley_chooses ? 1 : 0]
+    "INSERT INTO prizes (challenge_id, name, description, user_id) VALUES (?, ?, ?, ?)",
+    [challenge_id, name, description, user_id]
   );
   return await db.get(
     `SELECT p.*, u.username FROM prizes p

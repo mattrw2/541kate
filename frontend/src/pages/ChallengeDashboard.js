@@ -293,7 +293,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
   const [formData, setFormData] = useState({ duration: "", date: today, memo: "", photo: null, is_boosted: false })
   const [tooltip, setTooltip] = useState(null)
   const [showPrizeForm, setShowPrizeForm] = useState(false)
-  const [prizeForm, setPrizeForm] = useState({ name: "", description: "", riley_chooses: false })
+  const [prizeForm, setPrizeForm] = useState({ name: "", description: "" })
   const [editingPrize, setEditingPrize] = useState(null)
   const [showManage, setShowManage] = useState(false)
   const [showShare, setShowShare] = useState(false)
@@ -389,7 +389,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
       }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "prizes"] })
-      setPrizeForm({ name: "", description: "", riley_chooses: false })
+      setPrizeForm({ name: "", description: "" })
       setShowPrizeForm(false)
     },
   })
@@ -442,8 +442,8 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
   }
 
   const handleAddPrize = () => {
-    if (!prizeForm.description && !prizeForm.riley_chooses) { showTooltipMsg("Please enter a prize description."); return }
-    addPrizeMutation.mutate({ name: prizeForm.riley_chooses ? "Riley will choose my fate" : prizeForm.description, description: prizeForm.description, user_id: currentUser?.id, riley_chooses: prizeForm.riley_chooses })
+    if (!prizeForm.description) { showTooltipMsg("Please enter a prize description."); return }
+    addPrizeMutation.mutate({ name: prizeForm.description, description: prizeForm.description, user_id: currentUser?.id })
   }
 
   const chartOptions = challenge
@@ -472,17 +472,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
               },
             },
           },
-          datalabels: {
-            anchor: "end",
-            align: "end",
-            clamp: true,
-            color: "#374151",
-            font: { size: 24 },
-            formatter: (_value, context) => {
-              const username = context.chart.data.labels[context.dataIndex]
-              return username === "1scott" ? "*" : null
-            },
-          },
+          datalabels: { display: false },
         },
       }
     : null
@@ -712,12 +702,12 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                 {prizes.map((prize) => (
                   <li key={prize.id} className="flex items-start justify-between border-b border-gray-200 pb-3">
                     <div>
-                      <p className="text-base font-medium text-gray-800 whitespace-pre-wrap">{prize.riley_chooses ? (prize.description ? `🎲 ${prize.description}` : "🎲 Riley will choose my fate") : prize.name}{prize.username && <span className="text-xs text-gray-400 font-normal ml-1.5">by <span className="text-orange-500">{prize.username}</span></span>}</p>
+                      <p className="text-base font-medium text-gray-800 whitespace-pre-wrap">{prize.name}{prize.username && <span className="text-xs text-gray-400 font-normal ml-1.5">by <span className="text-orange-500">{prize.username}</span></span>}</p>
                       {prize.winner_username && (
                         <p className="text-xs text-gray-500 mt-1">🏆 selected by <span className="font-medium text-gray-700">{prize.winner_username}</span></p>
                       )}
                     </div>
-                    {!prize.winner_user_id && ((prize.riley_chooses && currentUser?.username === "Riley") || (!prize.riley_chooses && (prize.user_id == null || currentUser?.id === prize.user_id))) && (
+                    {!prize.winner_user_id && (prize.user_id == null || currentUser?.id === prize.user_id) && (
                       <button onClick={() => setEditingPrize(prize)} className="ml-3 flex-shrink-0 border border-gray-200 rounded px-2.5 py-1 text-xs text-gray-500 hover:border-yellow-500 hover:text-yellow-600 transition-colors">Edit</button>
                     )}
                     {isComplete && isMyTurn && !prize.winner_user_id && prize.user_id !== currentUser?.id && (
@@ -853,25 +843,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
             <p className="text-xs text-gray-400 mb-3">You ({currentUser?.username}) are providing this prize.</p>
             {tooltip && <div className="text-sm text-red-500 mb-3">{tooltip}</div>}
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPrizeForm((f) => ({ ...f, riley_chooses: true }))}
-                  className={`text-sm border rounded px-3 py-2 text-center transition-colors ${prizeForm.riley_chooses ? "bg-yellow-600 border-yellow-600 text-white" : "border-gray-200 text-gray-600 hover:border-yellow-400 hover:text-yellow-700"}`}
-                >
-                  🎲 Riley chooses
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPrizeForm((f) => ({ ...f, riley_chooses: false }))}
-                  className={`text-sm border rounded px-3 py-2 text-center transition-colors ${!prizeForm.riley_chooses ? "bg-yellow-600 border-yellow-600 text-white" : "border-gray-200 text-gray-600 hover:border-yellow-400 hover:text-yellow-700"}`}
-                >
-                  I'll define it
-                </button>
-              </div>
-              {!prizeForm.riley_chooses && (
-                <textarea value={prizeForm.description} onChange={(e) => setPrizeForm((f) => ({ ...f, description: e.target.value }))} placeholder="Describe the prize" rows={3} className="border rounded px-2 py-1 w-full text-base" />
-              )}
+              <textarea value={prizeForm.description} onChange={(e) => setPrizeForm((f) => ({ ...f, description: e.target.value }))} placeholder="Describe the prize" rows={3} className="border rounded px-2 py-1 w-full text-base" />
               <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={() => setShowPrizeForm(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
                 <button type="button" onClick={handleAddPrize} disabled={addPrizeMutation.isPending} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-4 py-1.5 text-sm disabled:opacity-50">
