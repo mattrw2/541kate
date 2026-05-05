@@ -272,7 +272,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const userTotals = (() => {
     const totals = {}
-    activities.filter((a) => !a.IS_ARCHIVED).forEach((a) => {
+    activities.filter((a) => !a.is_archived).forEach((a) => {
       if (!totals[a.user_id]) totals[a.user_id] = { user_id: a.user_id, username: a.username, total_duration: 0 }
       totals[a.user_id].total_duration += a.duration
     })
@@ -497,7 +497,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const allTimeChartData = (() => {
     const totals = {}
-    activities.filter((a) => !a.IS_ARCHIVED).forEach((a) => {
+    activities.filter((a) => !a.is_archived).forEach((a) => {
       totals[a.username] = (totals[a.username] || 0) + a.duration
     })
     return Object.entries(totals).map(([username, total_duration]) => ({ username, total_duration }))
@@ -506,7 +506,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const todayChartData = (() => {
     const totals = {}
-    activities.filter((a) => !a.IS_ARCHIVED && a.date === today).forEach((a) => {
+    activities.filter((a) => !a.is_archived && a.date === today).forEach((a) => {
       totals[a.username] = (totals[a.username] || 0) + a.duration
     })
     return Object.entries(totals).map(([username, total_duration]) => ({ username, total_duration }))
@@ -660,7 +660,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                   <div className="h-0.5 bg-yellow-500 animate-pulse rounded-full mb-3" />
                 )}
                 <ul className="space-y-2">
-                  {(activitySearch ? activities : showAllActivities ? activities.filter((a) => !a.IS_ARCHIVED) : activities.filter((a) => !a.IS_ARCHIVED).slice(0, 20)).filter((a) => !activitySearch || a.username?.toLowerCase().includes(activitySearch.toLowerCase()) || a.memo?.toLowerCase().includes(activitySearch.toLowerCase())).map((activity) => (
+                  {(activitySearch ? activities : showAllActivities ? activities.filter((a) => !a.is_archived) : activities.filter((a) => !a.is_archived).slice(0, 20)).filter((a) => !activitySearch || a.username?.toLowerCase().includes(activitySearch.toLowerCase()) || a.memo?.toLowerCase().includes(activitySearch.toLowerCase())).map((activity) => (
                     <ActivityItem
                       key={activity.id}
                       activity={activity}
@@ -673,7 +673,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                     />
                   ))}
                 </ul>
-                {!activitySearch && activities.filter((a) => !a.IS_ARCHIVED).length > 20 && !showAllActivities && (
+                {!activitySearch && activities.filter((a) => !a.is_archived).length > 20 && !showAllActivities && (
                   <button onClick={() => setShowAllActivities(true)} className="mt-3 text-sm text-yellow-600 hover:underline">
                     View all {activities.length} activities
                   </button>

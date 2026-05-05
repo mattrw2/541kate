@@ -45,7 +45,7 @@ const Recap = () => {
     if (challenge && !isComplete) navigate(`/challenge/${id}`)
   }, [challenge, isComplete, id, navigate])
 
-  const validActivities = activities.filter((a) => !a.IS_ARCHIVED)
+  const validActivities = activities.filter((a) => !a.is_archived)
 
   const totalMinutes = validActivities.reduce((sum, a) => sum + a.duration, 0)
 
