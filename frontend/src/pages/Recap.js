@@ -42,7 +42,8 @@ const Recap = () => {
   const isComplete = !!(challenge?.end_date && today > challenge.end_date)
 
   useEffect(() => {
-    if (challenge && !isComplete) navigate(`/challenge/${id}`)
+    if (id !== "3") navigate(`/challenge/${id}`)
+    else if (challenge && !isComplete) navigate(`/challenge/${id}`)
   }, [challenge, isComplete, id, navigate])
 
   const validActivities = activities.filter((a) => !a.is_archived)
@@ -168,7 +169,7 @@ const Recap = () => {
         ? totalMinutes
         : Math.round(totalMinutes / 100) * 100
       ).toLocaleString(),
-      sub: "minutes app-wide"
+      sub: "minutes"
     },
     topUser && {
       photo: "https://five41kate.onrender.com/1777869903283-IMG_9105.jpg",

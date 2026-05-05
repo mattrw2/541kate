@@ -552,13 +552,17 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
       )}
       {activeTab === "dashboard" && isWaitingForTurn && (
         <div className="mt-1 mb-4 bg-orange-100 px-4 py-3 flex items-center justify-between">
-          <p className="text-sm font-medium text-orange-900">Waiting for {nextPicker.username} to pick a prize. Check back soon or review the highlights.</p>
-          <button
-            onClick={() => navigate(`/challenge/${id}/recap`)}
-            className="text-sm font-semibold text-orange-900 underline ml-3 flex-shrink-0 hover:text-orange-700"
-          >
-            Highlights
-          </button>
+          <p className="text-sm font-medium text-orange-900">
+            Waiting for {nextPicker.username} to pick a prize. Check back soon{id === "3" ? " or review the highlights" : ""}.
+          </p>
+          {id === "3" && (
+            <button
+              onClick={() => navigate(`/challenge/${id}/recap`)}
+              className="text-sm font-semibold text-orange-900 underline ml-3 flex-shrink-0 hover:text-orange-700"
+            >
+              Highlights
+            </button>
+          )}
         </div>
       )}
       {/* Persistent header */}
@@ -570,7 +574,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                 <span className="truncate">{challenge.name}</span>
                 {showInfo ? <ChevronUpIcon className="w-4 h-4 text-gray-400 flex-shrink-0" /> : <ChevronDownIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />}
               </button>
-              {isComplete && (
+              {isComplete && id === "3" && (
                 <button
                   onClick={() => navigate(`/challenge/${id}/recap`)}
                   className="text-xs font-medium text-white bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 rounded px-1.5 py-0.5"
