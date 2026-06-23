@@ -24,11 +24,18 @@ const upload = multer({ storage });
 
 const app = express();
 app.use(cookieParser());
-app.use(cors())
+
+// Cookies require an explicit origin allowlist (wildcard is disallowed with
+// credentials). Set CORS_ORIGIN to the frontend origin(s) in production.
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
+  .split(",")
+  .map((o) => o.trim());
+app.use(cors({ origin: allowedOrigins, credentials: true }))
 
 const db = require("./db");
+const { requireDevice, assertUserInHousehold } = require("./middleware/device");
 
-app.post("/activities", upload.single('photo'), async (req, res) => {
+app.post("/activities", upload.single('photo'), requireDevice, async (req, res) => {
 
   const d = JSON.parse(req.body.data);
 
@@ -36,6 +43,9 @@ app.post("/activities", upload.single('photo'), async (req, res) => {
   const photo_path = req.file ? `/${req.file.filename}` : null;
   if (!user_id || !duration || !date) {
       return res.status(400).send("User ID, duration, and date are required.");
+  }
+  if (!(await assertUserInHousehold(user_id, req.householdId))) {
+      return res.status(403).send("That user is not in your household.");
   }
   try {
       const newActivity = await db.addActivity(user_id, duration, date, memo, photo_path, challenge_id || 1, lat, lng, is_boosted);
@@ -58,9 +68,11 @@ const server = app.listen(APP_PORT, function () {
 const usersRouter = require("./routes/users");
 const activitiesRouter = require("./routes/activities");
 const challengesRouter = require("./routes/challenges");
+const householdsRouter = require("./routes/households");
 app.use("/users", usersRouter);
 app.use("/activities", activitiesRouter);
 app.use("/challenges", challengesRouter);
+app.use("/households", householdsRouter);
 
 
 /* Add in some basic error handling so our server doesn't crash if we run into

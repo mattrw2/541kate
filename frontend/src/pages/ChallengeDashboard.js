@@ -12,8 +12,9 @@ import {
 } from "chart.js"
 import ChartDataLabels from "chartjs-plugin-datalabels"
 import { ArrowUpOnSquareIcon, TrophyIcon, BoltIcon, Cog6ToothIcon, ChevronDownIcon, ChevronUpIcon, ChartBarIcon, MagnifyingGlassIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline"
-import { apiUrl } from "../api"
+import { apiUrl, apiFetch } from "../api"
 import { useCurrentUser } from "../UserContext"
+import { useCopyButton } from "../useCopyButton"
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, ChartDataLabels)
 
@@ -88,7 +89,7 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
 
   const addComment = useMutation({
     mutationFn: (body) =>
-      fetch(`${apiUrl}/activities/${activity.id}/comments`, {
+      apiFetch(`${apiUrl}/activities/${activity.id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -252,19 +253,35 @@ const ChallengeDashboard = () => {
   const { currentUser } = useCurrentUser()
   const queryClient = useQueryClient()
 
-  const { data: challenge } = useQuery({
+  const challengeQuery = useQuery({
     queryKey: ["challenge", id],
-    queryFn: () => fetch(`${apiUrl}/challenges/${id}`).then((r) => r.json()),
+    retry: false,
+    queryFn: async () => {
+      const r = await apiFetch(`${apiUrl}/challenges/${id}`)
+      if (!r.ok) {
+        const err = new Error(r.status === 403 ? "forbidden" : "unavailable")
+        err.status = r.status
+        throw err
+      }
+      return r.json()
+    },
   })
+  const challenge = challengeQuery.data
+
+  const inviteUrl = challenge?.invite_token
+    ? `${window.location.origin}/join/${challenge.invite_token}`
+    : window.location.href
 
 const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
     queryKey: ["challenge", id, "activities"],
-    queryFn: () => fetch(`${apiUrl}/challenges/${id}/activities`).then((r) => r.json()),
+    enabled: challengeQuery.isSuccess,
+    queryFn: () => apiFetch(`${apiUrl}/challenges/${id}/activities`).then((r) => r.json()),
   })
 
   const { data: prizes = [], isSuccess: prizesLoaded } = useQuery({
     queryKey: ["challenge", id, "prizes"],
-    queryFn: () => fetch(`${apiUrl}/challenges/${id}/prizes`).then((r) => r.json()),
+    enabled: challengeQuery.isSuccess,
+    queryFn: () => apiFetch(`${apiUrl}/challenges/${id}/prizes`).then((r) => r.json()),
   })
 
   const today = new Date().toLocaleDateString("en-CA")
@@ -299,7 +316,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
   const [showShare, setShowShare] = useState(false)
   const [showInfo, setShowInfo] = useState(true)
   const [activeTab, setActiveTab] = useState("dashboard")
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopyButton()
   const [manageForm, setManageForm] = useState({ name: "", description: "", goal_minutes: 600, start_date: "", end_date: "" })
   const [managePhoto, setManagePhoto] = useState(null)
   const [manageSaveSuccess, setManageSaveSuccess] = useState(false)
@@ -329,7 +346,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const saveActivity = useMutation({
     mutationFn: (fd) =>
-      fetch(`${apiUrl}/activities`, { method: "POST", body: fd }).then((r) => r.json()),
+      apiFetch(`${apiUrl}/activities`, { method: "POST", body: fd }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "activities"] })
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "duration"] })
@@ -340,7 +357,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const incrementSus = useMutation({
     mutationFn: (activityId) =>
-      fetch(`${apiUrl}/activities/increment/${activityId}`, {
+      apiFetch(`${apiUrl}/activities/increment/${activityId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       }),
@@ -348,7 +365,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const decrementSus = useMutation({
     mutationFn: (activityId) =>
-      fetch(`${apiUrl}/activities/decrement/${activityId}`, {
+      apiFetch(`${apiUrl}/activities/decrement/${activityId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       }),
@@ -356,7 +373,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const deleteActivity = useMutation({
     mutationFn: (activityId) =>
-      fetch(`${apiUrl}/activities/${activityId}`, { method: "DELETE" }),
+      apiFetch(`${apiUrl}/activities/${activityId}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "activities"] })
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "duration"] })
@@ -369,7 +386,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const editPrizeMutation = useMutation({
     mutationFn: ({ prizeId, body }) =>
-      fetch(`${apiUrl}/challenges/${id}/prizes/${prizeId}`, {
+      apiFetch(`${apiUrl}/challenges/${id}/prizes/${prizeId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -382,7 +399,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const addPrizeMutation = useMutation({
     mutationFn: (body) =>
-      fetch(`${apiUrl}/challenges/${id}/prizes`, {
+      apiFetch(`${apiUrl}/challenges/${id}/prizes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -396,7 +413,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const claimPrize = useMutation({
     mutationFn: (prizeId) =>
-      fetch(`${apiUrl}/challenges/${id}/prizes/${prizeId}/claim`, {
+      apiFetch(`${apiUrl}/challenges/${id}/prizes/${prizeId}/claim`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: currentUser?.id }),
@@ -408,7 +425,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const updateChallenge = useMutation({
     mutationFn: (formData) =>
-      fetch(`${apiUrl}/challenges/${id}`, {
+      apiFetch(`${apiUrl}/challenges/${id}`, {
         method: "PUT",
         body: formData,
       }).then((r) => r.json()),
@@ -454,7 +471,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
         scales: {
           x: {
             beginAtZero: true,
-            ticks: { callback: (value) => `${value}h` },
+            ticks: { callback: (value) => `${value}m` },
           },
           y: { beginAtZero: true, grid: { display: false }, ticks: { autoSkip: false } },
         },
@@ -463,7 +480,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
           tooltip: {
             callbacks: {
               label: (context) => {
-                const totalMin = Math.round(context.parsed.x * 60)
+                const totalMin = Math.round(context.parsed.x)
                 const h = Math.floor(totalMin / 60)
                 const m = totalMin % 60
                 if (h && m) return `${h}h ${m}m`
@@ -482,7 +499,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
     afterDraw: (chart) => {
       if (!challenge) return
       const { ctx, chartArea, scales } = chart
-      const x = scales.x.getPixelForValue(challenge.goal_minutes / 60)
+      const x = scales.x.getPixelForValue(challenge.goal_minutes)
       if (x < chartArea.left || x > chartArea.right) return
       ctx.save()
       ctx.beginPath()
@@ -517,7 +534,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const chartData = {
     labels: activeChartData.map((u) => u.username),
-    datasets: [{ data: activeChartData.map((u) => u.total_duration / 60), backgroundColor: BG_COLORS, borderColor: BORDER_COLORS, borderWidth: 1 }],
+    datasets: [{ data: activeChartData.map((u) => u.total_duration), backgroundColor: BG_COLORS, borderColor: BORDER_COLORS, borderWidth: 1 }],
   }
 
   const formatDate = (dateStr) => {
@@ -526,11 +543,33 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
     return new Date(year, month - 1, day).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
   }
 
+  if (challengeQuery.isError) {
+    const forbidden = challengeQuery.error?.status === 403
+    return (
+      <div className="max-w-md mx-auto px-4 py-16 text-center">
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">
+          {forbidden ? "You're not invited to this challenge" : "Challenge unavailable"}
+        </h2>
+        <p className="text-gray-500 text-sm mb-6">
+          {forbidden
+            ? "Ask the organizer to share an invite link so you can join."
+            : "This challenge couldn't be loaded."}
+        </p>
+        <button
+          onClick={() => navigate("/challenges")}
+          className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-4 py-2 text-sm font-medium"
+        >
+          Back to challenges
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-3xl mx-auto pb-20">
       {activeTab === "dashboard" && currentUser && prizesLoaded && !prizes.some((p) => p.user_id === currentUser.id) && !isComplete && (
         <div className="mt-1 mb-4 bg-orange-100 px-4 py-3 flex items-center justify-between">
-          <p className="text-sm font-medium text-orange-900">Add a prize to join this challenge</p>
+          <p className="text-sm font-medium text-orange-900">Add a prize to get started</p>
           <button
             onClick={() => { if (currentUser) setShowPrizeForm(true) }}
             className="text-sm font-semibold text-orange-900 underline ml-3 flex-shrink-0 hover:text-orange-700"
@@ -744,23 +783,23 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
       </div>
 
       {/* Share modal */}
-      <Dialog open={showShare} onClose={() => { setShowShare(false); setCopied(false) }} className="relative z-50">
+      <Dialog open={showShare} onClose={() => setShowShare(false)} className="relative z-50">
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
             <div className="flex justify-between items-center mb-4">
               <Dialog.Title className="text-lg font-light text-gray-800">Invite</Dialog.Title>
-              <button onClick={() => { setShowShare(false); setCopied(false) }} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+              <button onClick={() => setShowShare(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
             </div>
             <div className="flex gap-2">
               <input
                 readOnly
-                value={window.location.href}
+                value={inviteUrl}
                 className="text-base border rounded px-2 py-1 flex-1 text-gray-600 bg-gray-50"
                 onClick={(e) => e.target.select()}
               />
               <button
-                onClick={() => { navigator.clipboard.writeText(window.location.href); setCopied(true) }}
+                onClick={() => copy(inviteUrl)}
                 className="bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded px-3 py-1 whitespace-nowrap"
               >
                 {copied ? "Copied!" : "Copy"}
@@ -937,11 +976,6 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                 </div>
               </div>
 
-              <QuickSelect
-                options={["Brisking", "Gaga ball", "Treadmill eating", "Making enchiladas", "Wheelchair exercises"]}
-                value={formData.memo}
-                onSelect={(opt) => setFormData((f) => ({ ...f, memo: opt }))}
-              />
               <textarea value={formData.memo} onChange={(e) => setFormData((f) => ({ ...f, memo: e.target.value }))} placeholder="Description" rows={2} className="border rounded w-full px-2 py-1 text-base" />
 
               <div className="flex items-center gap-3">

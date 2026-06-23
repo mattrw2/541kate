@@ -1,11 +1,12 @@
 const express = require("express")
 const db = require("../db")
+const { requireDevice } = require("../middleware/device")
 
 const router = express.Router()
 
-router.get("/", async (req, res) => {
+router.get("/", requireDevice, async (req, res) => {
   try {
-    const users = await db.getUsers()
+    const users = await db.getHouseholdUsers(req.householdId)
     return res.json(users)
   } catch (error) {
     console.error(error)
@@ -35,14 +36,13 @@ router.get("/duration", async (req, res) => {
   }
 })
 
-router.post("/", async (req, res) => {
+router.post("/", requireDevice, async (req, res) => {
   const { username } = req.body
   if (!username) {
     return res.status(400).send("Username is required.")
   }
   try {
-    const newUser = await db.addUser(username)
-    console.log("New user:", newUser)
+    const newUser = await db.addUserToHousehold(req.householdId, username.trim())
     return res.json(newUser)
   } catch (error) {
     console.error(error)

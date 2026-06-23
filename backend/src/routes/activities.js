@@ -1,7 +1,11 @@
 const express = require("express");
 const db = require("../db");
+const { requireDevice, assertUserInHousehold } = require("../middleware/device");
 
 const router = express.Router();
+
+// All activity actions require a trusted device.
+router.use(requireDevice);
 
 router.get("/list", async (req, res) => {
     try {
@@ -43,6 +47,9 @@ router.post("/:id/comments", async (req, res) => {
     const { id } = req.params;
     const { user_id, text, lat, lng } = req.body;
     if (!text) return res.status(400).send("Text is required.");
+    if (user_id && !(await assertUserInHousehold(user_id, req.householdId))) {
+        return res.status(403).send("That user is not in your household.");
+    }
     try {
         const comment = await db.addActivityComment(id, user_id, text, lat, lng);
         return res.json(comment);

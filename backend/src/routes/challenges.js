@@ -2,6 +2,7 @@ const express = require("express");
 const db = require("../db");
 const multer = require("multer");
 const path = require("path");
+const { requireDevice, assertUserInHousehold } = require("../middleware/device");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(__dirname, "../../database/uploads/")),
@@ -11,10 +12,55 @@ const upload = multer({ storage });
 
 const router = express.Router();
 
-// GET / - list all challenges
+// GET /by-token/:token - public lookup so an invite link can show the challenge
+// name before the visitor has set up a device. Must stay above the guards below.
+router.get("/by-token/:token", async (req, res) => {
+  try {
+    const challenge = await db.getChallengeByInviteToken(req.params.token);
+    if (!challenge) return res.status(404).send("Invalid invite link.");
+    return res.json({ id: challenge.id, name: challenge.name });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while loading the invite.");
+  }
+});
+
+// Every challenge route below requires a trusted device.
+router.use(requireDevice);
+
+// POST /redeem/:token - invite the current household to the challenge behind an
+// invite link. Registered before the requireInvited guard (the whole point is
+// that the household is not invited yet).
+router.post("/redeem/:token", async (req, res) => {
+  try {
+    const challenge = await db.getChallengeByInviteToken(req.params.token);
+    if (!challenge) return res.status(404).send("Invalid invite link.");
+    await db.addChallengeInvite(challenge.id, req.householdId);
+    return res.json({ challenge_id: challenge.id });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while joining the challenge.");
+  }
+});
+
+// Routes scoped to a specific challenge require the household to be invited.
+const requireInvited = async (req, res, next) => {
+  try {
+    if (!(await db.householdInvited(req.params.id, req.householdId))) {
+      return res.status(403).send("Your household is not invited to this challenge.");
+    }
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while checking access.");
+  }
+};
+router.use("/:id", requireInvited);
+
+// GET / - list challenges this household is invited to
 router.get("/", async (req, res) => {
   try {
-    const challenges = await db.getChallenges();
+    const challenges = await db.getChallengesForHousehold(req.householdId);
     return res.json(challenges);
   } catch (error) {
     console.error(error);
@@ -24,13 +70,22 @@ router.get("/", async (req, res) => {
 
 // POST / - create a challenge
 router.post("/", upload.single("photo"), async (req, res) => {
-  const { name, description, goal_minutes, start_date, end_date, admin_user_id } = req.body;
+  const { name, description, goal_minutes, start_date, end_date, admin_user_id, prize } = req.body;
   if (!name) {
     return res.status(400).send("Name is required.");
+  }
+  if (!(await assertUserInHousehold(admin_user_id, req.householdId))) {
+    return res.status(403).send("Invalid admin user.");
   }
   const photo_path = req.file ? `/${req.file.filename}` : null;
   try {
     const challenge = await db.createChallenge(name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path);
+    // The creator's household can always see its own challenge.
+    await db.addChallengeInvite(challenge.id, req.householdId);
+    // Optional prize the creator is putting up.
+    if (prize && prize.trim()) {
+      await db.addPrize(challenge.id, prize.trim(), null, admin_user_id);
+    }
     return res.json(challenge);
   } catch (error) {
     console.error(error);
@@ -85,6 +140,9 @@ router.post("/:id/participants", async (req, res) => {
   const { user_id } = req.body;
   if (!user_id) {
     return res.status(400).send("user_id is required.");
+  }
+  if (!(await assertUserInHousehold(user_id, req.householdId))) {
+    return res.status(403).send("That user is not in your household.");
   }
   try {
     await db.addChallengeParticipant(id, user_id);
@@ -173,6 +231,9 @@ router.post("/:id/prizes", async (req, res) => {
   if (!name) {
     return res.status(400).send("Name is required.");
   }
+  if (!(await assertUserInHousehold(user_id, req.householdId))) {
+    return res.status(403).send("That user is not in your household.");
+  }
   try {
     const existing = await db.getUserPrizeForChallenge(id, user_id);
     if (existing) return res.status(400).send("You have already added a prize to this challenge.");
@@ -202,6 +263,9 @@ router.post("/:id/prizes/:prizeId/claim", async (req, res) => {
   const { prizeId } = req.params;
   const { user_id } = req.body;
   if (!user_id) return res.status(400).send("user_id is required.");
+  if (!(await assertUserInHousehold(user_id, req.householdId))) {
+    return res.status(403).send("That user is not in your household.");
+  }
   try {
     const prize = await db.claimPrize(prizeId, user_id);
     return res.json(prize);
@@ -220,6 +284,51 @@ router.delete("/:id/prizes/:prizeId", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("An error occurred while deleting prize.");
+  }
+});
+
+// GET /:id/invites - households invited to this challenge
+router.get("/:id/invites", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const invites = await db.getChallengeInvites(id);
+    return res.json(invites);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while getting invites.");
+  }
+});
+
+// POST /:id/invites - invite a household by its code
+router.post("/:id/invites", async (req, res) => {
+  const { id } = req.params;
+  const { code } = req.body;
+  if (!code) {
+    return res.status(400).send("code is required.");
+  }
+  try {
+    const household = await db.getHouseholdByCode(code.trim().toUpperCase());
+    if (!household) {
+      return res.status(404).send("No household found with that code.");
+    }
+    await db.addChallengeInvite(id, household.id);
+    const invites = await db.getChallengeInvites(id);
+    return res.json(invites);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while adding the invite.");
+  }
+});
+
+// DELETE /:id/invites/:householdId - remove an invited household
+router.delete("/:id/invites/:householdId", async (req, res) => {
+  const { id, householdId } = req.params;
+  try {
+    await db.removeChallengeInvite(id, householdId);
+    return res.send("Invite removed.");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while removing the invite.");
   }
 });
 

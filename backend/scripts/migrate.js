@@ -30,7 +30,7 @@ const MIGRATIONS_DIR = path.join(__dirname, "../migrations");
 
   const files = fs
     .readdirSync(MIGRATIONS_DIR)
-    .filter((f) => f.endsWith(".sql"))
+    .filter((f) => f.endsWith(".sql") && !f.endsWith(".down.sql"))
     .sort();
 
   let ran = 0;

@@ -1,27 +1,28 @@
 import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { apiUrl } from "../api"
+import { apiUrl, apiFetch } from "../api"
 import { useCurrentUser } from "../UserContext"
+import { useCopyButton } from "../useCopyButton"
 
 const ManageChallenge = () => {
   const { id } = useParams()
-  const { currentUser } = useCurrentUser()
+  const { currentUser, household } = useCurrentUser()
   const queryClient = useQueryClient()
 
   const { data: challenge } = useQuery({
     queryKey: ["challenge", id],
-    queryFn: () => fetch(`${apiUrl}/challenges/${id}`).then((r) => r.json()),
+    queryFn: () => apiFetch(`${apiUrl}/challenges/${id}`).then((r) => r.json()),
   })
 
   const { data: participants = [] } = useQuery({
     queryKey: ["challenge", id, "participants"],
-    queryFn: () => fetch(`${apiUrl}/challenges/${id}/participants`).then((r) => r.json()),
+    queryFn: () => apiFetch(`${apiUrl}/challenges/${id}/participants`).then((r) => r.json()),
   })
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ["users"],
-    queryFn: () => fetch(`${apiUrl}/users`).then((r) => r.json()),
+    queryFn: () => apiFetch(`${apiUrl}/users`).then((r) => r.json()),
   })
 
   const [form, setForm] = useState({
@@ -33,6 +34,14 @@ const ManageChallenge = () => {
   })
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [addUserId, setAddUserId] = useState("")
+  const [inviteCode, setInviteCode] = useState("")
+  const [inviteError, setInviteError] = useState("")
+  const { copied: linkCopied, copy } = useCopyButton()
+
+  const { data: invites = [] } = useQuery({
+    queryKey: ["challenge", id, "invites"],
+    queryFn: () => apiFetch(`${apiUrl}/challenges/${id}/invites`).then((r) => r.json()),
+  })
 
   useEffect(() => {
     if (challenge) {
@@ -48,7 +57,7 @@ const ManageChallenge = () => {
 
   const updateChallenge = useMutation({
     mutationFn: (body) =>
-      fetch(`${apiUrl}/challenges/${id}`, {
+      apiFetch(`${apiUrl}/challenges/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -62,7 +71,7 @@ const ManageChallenge = () => {
 
   const addParticipant = useMutation({
     mutationFn: (user_id) =>
-      fetch(`${apiUrl}/challenges/${id}/participants`, {
+      apiFetch(`${apiUrl}/challenges/${id}/participants`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id }),
@@ -75,9 +84,33 @@ const ManageChallenge = () => {
 
   const removeParticipant = useMutation({
     mutationFn: (userId) =>
-      fetch(`${apiUrl}/challenges/${id}/participants/${userId}`, { method: "DELETE" }),
+      apiFetch(`${apiUrl}/challenges/${id}/participants/${userId}`, { method: "DELETE" }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "participants"] }),
+  })
+
+  const addInvite = useMutation({
+    mutationFn: async (code) => {
+      const res = await apiFetch(`${apiUrl}/challenges/${id}/invites`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      })
+      if (!res.ok) throw new Error((await res.text()) || "Could not invite that household")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["challenge", id, "invites"] })
+      setInviteCode("")
+      setInviteError("")
+    },
+    onError: (e) => setInviteError(e.message),
+  })
+
+  const removeInvite = useMutation({
+    mutationFn: (householdId) =>
+      apiFetch(`${apiUrl}/challenges/${id}/invites/${householdId}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["challenge", id, "invites"] }),
   })
 
   if (!challenge) return <div className="px-4">Loading...</div>
@@ -87,6 +120,7 @@ const ManageChallenge = () => {
 
   const participantIds = participants.map((p) => p.id)
   const nonParticipants = allUsers.filter((u) => !participantIds.includes(u.id))
+  const inviteLink = `${window.location.origin}/join/${challenge.invite_token}`
 
   return (
     <div className="max-w-md mx-auto px-4">
@@ -203,6 +237,66 @@ const ManageChallenge = () => {
             </button>
           </div>
         )}
+      </section>
+
+      <section className="mt-8">
+        <h3 className="text-lg mb-1 border-b border-gray-200 pb-1">Invited households</h3>
+        <p className="text-xs text-gray-400 mb-3">Only invited households can see this challenge.</p>
+
+        {challenge.invite_token && (
+          <div className="mb-4">
+            <label className="block text-xs text-gray-500 mb-1">Invite link (joins their whole household)</label>
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={inviteLink}
+                onClick={(e) => e.target.select()}
+                className="text-sm border border-gray-200 rounded px-2 py-1 w-full bg-gray-50 text-gray-700"
+              />
+              <button
+                onClick={() => copy(inviteLink)}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1 text-sm font-medium whitespace-nowrap"
+              >
+                {linkCopied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <ul className="space-y-2 mb-4">
+          {invites.map((h) => (
+            <li key={h.id} className="flex justify-between items-center text-sm">
+              <span>
+                {h.name} <span className="text-gray-400 font-mono">({h.code})</span>
+              </span>
+              {h.id !== household?.id && (
+                <button
+                  onClick={() => removeInvite.mutate(h.id)}
+                  className="text-red-500 text-xs border border-red-400 rounded px-2 py-0.5 hover:bg-red-500 hover:text-white"
+                >
+                  Remove
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+            placeholder="Household code"
+            className="text-sm border rounded px-2 py-1 uppercase tracking-widest"
+          />
+          <button
+            onClick={() => { if (inviteCode.trim()) addInvite.mutate(inviteCode.trim()) }}
+            disabled={addInvite.isPending}
+            className="bg-transparent hover:bg-yellow-600 text-yellow-600 hover:text-white py-1 px-2 border border-yellow-600 hover:border-transparent rounded text-sm disabled:opacity-50"
+          >
+            Invite
+          </button>
+        </div>
+        {inviteError && <p className="text-xs text-red-500 mt-2">{inviteError}</p>}
       </section>
     </div>
   )

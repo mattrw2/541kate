@@ -1,8 +1,9 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useMutation } from "@tanstack/react-query"
-import { apiUrl } from "../api"
+import { apiUrl, apiFetch } from "../api"
 import { useCurrentUser } from "../UserContext"
+import { useCopyButton } from "../useCopyButton"
 
 const CreateChallenge = () => {
   const { currentUser } = useCurrentUser()
@@ -14,28 +15,32 @@ const CreateChallenge = () => {
     goal_minutes: "",
     start_date: "",
     end_date: "",
+    prize: ""
   })
   const [photo, setPhoto] = useState(null)
   const [error, setError] = useState(null)
   const [created, setCreated] = useState(null)
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopyButton()
 
   const createChallenge = useMutation({
     mutationFn: (formData) =>
-      fetch(`${apiUrl}/challenges`, {
+      apiFetch(`${apiUrl}/challenges`, {
         method: "POST",
-        body: formData,
+        body: formData
       }).then((r) => {
         if (!r.ok) throw new Error("Failed to create challenge.")
         return r.json()
       }),
     onSuccess: (data) => setCreated(data),
-    onError: () => setError("Failed to create challenge."),
+    onError: () => setError("Failed to create challenge.")
   })
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!form.name) { setError("Name is required."); return }
+    if (!form.name) {
+      setError("Name is required.")
+      return
+    }
     setError(null)
     const formData = new FormData()
     formData.append("name", form.name)
@@ -43,31 +48,15 @@ const CreateChallenge = () => {
     formData.append("goal_minutes", form.goal_minutes)
     formData.append("start_date", form.start_date || "")
     formData.append("end_date", form.end_date || "")
+    formData.append("prize", form.prize || "")
     formData.append("admin_user_id", currentUser.id)
     if (photo) formData.append("photo", photo)
     createChallenge.mutate(formData)
   }
 
   const inviteUrl = created
-    ? `${window.location.origin}/challenge/${created.id}`
+    ? `${window.location.origin}/join/${created.invite_token}`
     : ""
-
-  const handleCopy = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(inviteUrl).then(() => setCopied(true))
-    } else {
-      const el = document.createElement("textarea")
-      el.value = inviteUrl
-      el.style.position = "fixed"
-      el.style.opacity = "0"
-      document.body.appendChild(el)
-      el.focus()
-      el.select()
-      document.execCommand("copy")
-      document.body.removeChild(el)
-      setCopied(true)
-    }
-  }
 
   if (!currentUser) {
     return (
@@ -81,10 +70,14 @@ const CreateChallenge = () => {
     return (
       <div className="max-w-md mx-auto px-4">
         <h2 className="text-2xl mb-2">{created.name} created!</h2>
-        <p className="text-gray-600 text-sm mb-6">Share the link below with members so they can join the challenge.</p>
+        <p className="text-gray-600 text-sm mb-6">
+          Share the link below to invite others to the challenge.
+        </p>
 
         <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-          <label className="block text-xs text-gray-500 uppercase tracking-wide">Invite Link</label>
+          <label className="block text-xs text-gray-500 uppercase tracking-wide">
+            Invite Link
+          </label>
           <div className="flex gap-2">
             <input
               readOnly
@@ -93,13 +86,12 @@ const CreateChallenge = () => {
               className="text-base border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none bg-gray-50 text-gray-700"
             />
             <button
-              onClick={handleCopy}
+              onClick={() => copy(inviteUrl)}
               className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium whitespace-nowrap"
             >
               {copied ? "Copied!" : "Copy"}
             </button>
           </div>
-          <p className="text-xs text-gray-400">Members can open this link and select their name to join and log activities.</p>
         </div>
 
         <button
@@ -120,7 +112,9 @@ const CreateChallenge = () => {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Name</label>
+          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
+            Name
+          </label>
           <input
             type="text"
             value={form.name}
@@ -131,47 +125,78 @@ const CreateChallenge = () => {
         </div>
 
         <div>
-          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Description</label>
+          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
+            Description
+          </label>
           <textarea
             value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, description: e.target.value }))
+            }
             className="text-base border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400"
             rows={3}
           />
         </div>
 
         <div>
-          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Goal (minutes)</label>
+          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
+            Goal (minutes)
+          </label>
           <input
             type="number"
             value={form.goal_minutes}
-            onChange={(e) => setForm((f) => ({ ...f, goal_minutes: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, goal_minutes: e.target.value }))
+            }
             className="text-base border border-gray-200 rounded px-2 py-1.5 w-32 focus:outline-none focus:border-yellow-400"
             min="0"
           />
         </div>
 
         <div>
-          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Start date</label>
+          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
+            Prize you're offering
+          </label>
+          <input
+            type="text"
+            value={form.prize}
+            onChange={(e) => setForm((f) => ({ ...f, prize: e.target.value }))}
+            placeholder="e.g. Loser buys dinner"
+            className="text-base border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
+            Start date
+          </label>
           <input
             type="date"
             value={form.start_date}
-            onChange={(e) => setForm((f) => ({ ...f, start_date: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, start_date: e.target.value }))
+            }
             className="text-base border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400"
           />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">End date</label>
+          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
+            End date
+          </label>
           <input
             type="date"
             value={form.end_date}
-            onChange={(e) => setForm((f) => ({ ...f, end_date: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, end_date: e.target.value }))
+            }
             className="text-base border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400"
           />
         </div>
 
         <div>
-          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Photo (optional)</label>
+          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
+            Photo (optional)
+          </label>
           <input
             type="file"
             accept="image/*"

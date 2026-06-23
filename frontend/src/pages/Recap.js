@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { PauseIcon, PlayIcon } from "@heroicons/react/24/solid"
-import { apiUrl } from "../api"
+import { apiUrl, apiFetch } from "../api"
 
 const SLIDE_DURATION_MS = 5000
 
@@ -29,13 +29,13 @@ const Recap = () => {
 
   const { data: challenge } = useQuery({
     queryKey: ["challenge", id],
-    queryFn: () => fetch(`${apiUrl}/challenges/${id}`).then((r) => r.json())
+    queryFn: () => apiFetch(`${apiUrl}/challenges/${id}`).then((r) => r.json())
   })
 
   const { data: activities = [] } = useQuery({
     queryKey: ["challenge", id, "activities"],
     queryFn: () =>
-      fetch(`${apiUrl}/challenges/${id}/activities`).then((r) => r.json())
+      apiFetch(`${apiUrl}/challenges/${id}/activities`).then((r) => r.json())
   })
 
   const today = new Date().toLocaleDateString("en-CA")

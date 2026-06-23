@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const { sql } = require("./config");
 
 const paramize = (query) => {
@@ -23,21 +24,112 @@ const db = {
   },
 };
 
-const getUsers = async () => {
-  return await db.all("SELECT * FROM users order by username");
-};
-
 const getUserById = async (id) => {
   return await db.get("SELECT * FROM users WHERE id = ?", [id]);
 };
 
-const runMigration = async (migration) => {
-  await sql.unsafe(migration);
+// --- Households & trusted devices ---
+
+const createHousehold = async (name, code) => {
+  const result = await db.run("INSERT INTO households (name, code) VALUES (?, ?) RETURNING id", [name, code]);
+  return await db.get("SELECT * FROM households WHERE id = ?", [result.lastID]);
 };
 
-const addUser = async (username) => {
-  const result = await db.run("INSERT INTO users (username) VALUES (?) RETURNING id", [username]);
+const getHouseholdById = async (id) => {
+  return await db.get("SELECT * FROM households WHERE id = ?", [id]);
+};
+
+const getHouseholdByCode = async (code) => {
+  return await db.get("SELECT * FROM households WHERE code = ?", [code]);
+};
+
+const getHouseholdUsers = async (household_id) => {
+  return await db.all("SELECT * FROM users WHERE household_id = ? ORDER BY username", [household_id]);
+};
+
+const addUserToHousehold = async (household_id, username) => {
+  const result = await db.run(
+    "INSERT INTO users (household_id, username) VALUES (?, ?) RETURNING id",
+    [household_id, username]
+  );
   return await db.get("SELECT * FROM users WHERE id = ?", [result.lastID]);
+};
+
+const userInHousehold = async (user_id, household_id) => {
+  return await db.get("SELECT 1 FROM users WHERE id = ? AND household_id = ?", [user_id, household_id]);
+};
+
+const addDevice = async (household_id, token_hash, label = null) => {
+  const result = await db.run(
+    "INSERT INTO devices (household_id, token_hash, label) VALUES (?, ?, ?) RETURNING id",
+    [household_id, token_hash, label]
+  );
+  return await db.get("SELECT * FROM devices WHERE id = ?", [result.lastID]);
+};
+
+const getDeviceByTokenHash = async (token_hash) => {
+  return await db.get("SELECT * FROM devices WHERE token_hash = ?", [token_hash]);
+};
+
+const touchDevice = async (id) => {
+  await db.run("UPDATE devices SET last_seen_at = NOW() WHERE id = ?", [id]);
+};
+
+const deleteDevice = async (id) => {
+  await db.run("DELETE FROM devices WHERE id = ?", [id]);
+};
+
+// --- Challenge invites (visibility) ---
+
+const getChallengesForHousehold = async (household_id) => {
+  return await db.all(
+    `SELECT c.*, u.username as admin_username,
+      (SELECT COUNT(*) FROM challenge_participants cp WHERE cp.challenge_id = c.id) as participant_count
+    FROM challenges c
+    JOIN challenge_invites ci ON ci.challenge_id = c.id AND ci.household_id = ?
+    LEFT JOIN users u ON c.admin_user_id = u.id
+    ORDER BY c.created_at DESC`,
+    [household_id]
+  );
+};
+
+const getChallengeByInviteToken = async (token) => {
+  return await db.get("SELECT * FROM challenges WHERE invite_token = ?", [token]);
+};
+
+const householdInvited = async (challenge_id, household_id) => {
+  return await db.get(
+    "SELECT 1 FROM challenge_invites WHERE challenge_id = ? AND household_id = ?",
+    [challenge_id, household_id]
+  );
+};
+
+const getChallengeInvites = async (challenge_id) => {
+  return await db.all(
+    `SELECT h.id, h.name, h.code FROM challenge_invites ci
+    JOIN households h ON ci.household_id = h.id
+    WHERE ci.challenge_id = ?
+    ORDER BY h.name`,
+    [challenge_id]
+  );
+};
+
+const addChallengeInvite = async (challenge_id, household_id) => {
+  await db.run(
+    "INSERT INTO challenge_invites (challenge_id, household_id) VALUES (?, ?) ON CONFLICT (challenge_id, household_id) DO NOTHING",
+    [challenge_id, household_id]
+  );
+};
+
+const removeChallengeInvite = async (challenge_id, household_id) => {
+  await db.run(
+    "DELETE FROM challenge_invites WHERE challenge_id = ? AND household_id = ?",
+    [challenge_id, household_id]
+  );
+};
+
+const runMigration = async (migration) => {
+  await sql.unsafe(migration);
 };
 
 const deleteUser = async (id) => {
@@ -80,16 +172,6 @@ const listUsersByDuration = async () => {
   );
 };
 
-const getChallenges = async () => {
-  return await db.all(
-    `SELECT c.*, u.username as admin_username,
-      (SELECT COUNT(*) FROM challenge_participants cp WHERE cp.challenge_id = c.id) as participant_count
-    FROM challenges c
-    LEFT JOIN users u ON c.admin_user_id = u.id
-    ORDER BY c.created_at DESC`
-  );
-};
-
 const getChallenge = async (id) => {
   return await db.get(
     `SELECT c.*, u.username as admin_username
@@ -101,9 +183,10 @@ const getChallenge = async (id) => {
 };
 
 const createChallenge = async (name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path = null) => {
+  const invite_token = crypto.randomBytes(16).toString("hex");
   const result = await db.run(
-    "INSERT INTO challenges (name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
-    [name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path]
+    "INSERT INTO challenges (name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path, invite_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+    [name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path, invite_token]
   );
   await db.run(
     "INSERT INTO challenge_participants (challenge_id, user_id) VALUES (?, ?) ON CONFLICT (challenge_id, user_id) DO NOTHING",
@@ -258,7 +341,7 @@ const getActivityComments = async (activity_id) => {
 const addActivityComment = async (activity_id, user_id, text, lat, lng) => {
   const result = await db.run(
     "INSERT INTO activity_comments (activity_id, user_id, text, lat, lng) VALUES (?, ?, ?, ?, ?) RETURNING id",
-    [activity_id, user_id, text, lat, lng]
+    [activity_id, user_id ?? null, text, lat ?? null, lng ?? null]
   );
   return await db.get(
     `SELECT c.*, u.username FROM activity_comments c
@@ -269,10 +352,24 @@ const addActivityComment = async (activity_id, user_id, text, lat, lng) => {
 };
 
 module.exports = {
-  getUsers,
   getUserById,
+  createHousehold,
+  getHouseholdById,
+  getHouseholdByCode,
+  getHouseholdUsers,
+  addUserToHousehold,
+  userInHousehold,
+  addDevice,
+  getDeviceByTokenHash,
+  touchDevice,
+  deleteDevice,
+  getChallengesForHousehold,
+  getChallengeByInviteToken,
+  householdInvited,
+  getChallengeInvites,
+  addChallengeInvite,
+  removeChallengeInvite,
   listActivities,
-  addUser,
   listUsersByDuration,
   addActivity,
   updateActivityAddress,
@@ -281,7 +378,6 @@ module.exports = {
   runMigration,
   incrementSusCount,
   decrementSusCount,
-  getChallenges,
   getChallenge,
   createChallenge,
   updateChallenge,
