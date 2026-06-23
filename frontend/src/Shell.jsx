@@ -64,7 +64,7 @@ const Shell = ({ children }) => {
     <select
       value={currentUser?.id || ""}
       onChange={handleUserChange}
-      className="font-medium text-sm border-2 border-yellow-400 rounded-lg px-3 py-1.5 bg-yellow-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+      className="font-medium text-sm border-2 border-yellow-400 rounded-lg px-3 py-1.5 bg-yellow-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 max-w-34 truncate"
     >
       <option value="" disabled hidden>Who's using this?</option>
       {profiles.map((u) => (

@@ -105,12 +105,13 @@ const CreateChallenge = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto px-4">
-      <h2 className="text-2xl mb-6">New Challenge</h2>
+    <div className="flex justify-center px-4 pt-4 pb-10">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h2 className="text-2xl mb-6">New Challenge</h2>
 
-      {error && <div className="text-red-500 text-sm mb-3">{error}</div>}
+        {error && <div className="text-red-500 text-sm mb-3">{error}</div>}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
             Name
@@ -161,7 +162,7 @@ const CreateChallenge = () => {
             type="text"
             value={form.prize}
             onChange={(e) => setForm((f) => ({ ...f, prize: e.target.value }))}
-            placeholder="e.g. Loser buys dinner"
+            placeholder="e.g. will shave my head"
             className="text-base border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400"
           />
         </div>
@@ -176,7 +177,7 @@ const CreateChallenge = () => {
             onChange={(e) =>
               setForm((f) => ({ ...f, start_date: e.target.value }))
             }
-            className="text-base border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400"
+            className={`text-base border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400 ${form.start_date ? "text-gray-700" : "text-gray-400"}`}
           />
         </div>
         <div>
@@ -189,7 +190,7 @@ const CreateChallenge = () => {
             onChange={(e) =>
               setForm((f) => ({ ...f, end_date: e.target.value }))
             }
-            className="text-base border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400"
+            className={`text-base border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400 ${form.end_date ? "text-gray-700" : "text-gray-400"}`}
           />
         </div>
 
@@ -212,7 +213,8 @@ const CreateChallenge = () => {
         >
           {createChallenge.isPending ? "Creating..." : "Create Challenge"}
         </button>
-      </form>
+        </form>
+      </div>
     </div>
   )
 }
