@@ -5,6 +5,6 @@ import { test, expect } from "@playwright/test"
 // this is a stable target for a first visual snapshot (no backend required).
 test("onboarding screen renders for a new visitor", async ({ page }) => {
   await page.goto("/challenges")
-  await expect(page.getByRole("heading", { name: "Welcome to 541Kate" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Sign up" })).toBeVisible()
   await expect(page).toHaveScreenshot("onboarding.png", { fullPage: true })
 })

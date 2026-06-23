@@ -6,9 +6,9 @@ import { useCurrentUser } from "../UserContext"
 // join an existing one with its code (the code is also the add-device path).
 const Onboarding = () => {
   const { applySession } = useCurrentUser()
-  const [mode, setMode] = useState("create")
+  const [mode, setMode] = useState("join")
   const [username, setUsername] = useState("")
-  const [code, setCode] = useState("")
+  const [code, setCode] = useState("541KATE")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
 
@@ -48,8 +48,6 @@ const Onboarding = () => {
   return (
     <div className="flex justify-center px-4 py-10">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
-        <h1 className="text-xl font-bold text-gray-800 mb-4">Welcome to 541Kate</h1>
-
         <div className="flex gap-2 mb-5">
           <button className={tabClass(mode === "create")} onClick={() => { setMode("create"); setError("") }}>
             Sign up
@@ -82,14 +80,17 @@ const Onboarding = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            <input
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              onKeyDown={(e) => e.key === "Enter" && submitJoin()}
-              placeholder="Household code"
-              className="text-base border rounded-lg px-3 py-2 w-full tracking-widest uppercase"
-            />
+            <div>
+              <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Household code</label>
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === "Enter" && submitJoin()}
+                placeholder="Household code"
+                className="text-base border rounded-lg px-3 py-2 w-full tracking-widest uppercase"
+              />
+            </div>
             <button
               onClick={submitJoin}
               disabled={busy}
@@ -98,7 +99,7 @@ const Onboarding = () => {
               {busy ? "Joining…" : "Sign in"}
             </button>
             <p className="text-xs text-gray-400">
-              Ask someone in the household for the code (Household settings → code).
+              Ask someone in the household for the code.
             </p>
           </div>
         )}
