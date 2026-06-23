@@ -9,10 +9,15 @@
     "migrate": "node scripts/migrate.js",
     "migrate:down": "node scripts/migrate-down.js",
     "migrate:sqlite": "node scripts/migrate-from-sqlite.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "author": "Kate Stevents",
   "license": "MIT",
+  "devDependencies": {
+    "supertest": "^7.0.0",
+    "vitest": "^2.1.9"
+  },
   "dependencies": {
     "body-parser": "^1.20.1",
     "bootstrap": "^5.2.3",

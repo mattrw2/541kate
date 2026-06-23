@@ -1,10 +1,6 @@
 const crypto = require("crypto");
 const { sql } = require("./config");
-
-const paramize = (query) => {
-  let i = 0;
-  return query.replace(/\?/g, () => `$${++i}`);
-};
+const { paramize } = require("./paramize");
 
 const db = {
   run: async (query, params = []) => {

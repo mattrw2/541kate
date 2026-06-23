@@ -60,10 +60,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "../database/uploads")));
 
-const server = app.listen(APP_PORT, function () {
-  console.log(`Server is up and running at http://localhost:${APP_PORT}/`);
-});
-
 // Add in our routes
 const usersRouter = require("./routes/users");
 const activitiesRouter = require("./routes/activities");
@@ -91,3 +87,13 @@ const errorHandler = function (err, req, res, next) {
   }
 };
 app.use(errorHandler);
+
+// Only bind a port when run directly (`node src/server.js`); when imported by
+// tests we just export the app for supertest.
+if (require.main === module) {
+  app.listen(APP_PORT, function () {
+    console.log(`Server is up and running at http://localhost:${APP_PORT}/`);
+  });
+}
+
+module.exports = app;
