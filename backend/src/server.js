@@ -27,10 +27,22 @@ app.use(cookieParser());
 
 // Cookies require an explicit origin allowlist (wildcard is disallowed with
 // credentials). Set CORS_ORIGIN to the frontend origin(s) in production.
+const normalizeOrigin = (o) => o.trim().replace(/\/+$/, ""); // tolerate trailing slashes
 const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
   .split(",")
-  .map((o) => o.trim());
-app.use(cors({ origin: allowedOrigins, credentials: true }))
+  .map(normalizeOrigin)
+  .filter(Boolean);
+console.log("CORS allowed origins:", allowedOrigins);
+app.use(
+  cors({
+    origin(origin, cb) {
+      // Allow non-browser / same-origin requests (no Origin header).
+      if (!origin) return cb(null, true);
+      cb(null, allowedOrigins.includes(normalizeOrigin(origin)));
+    },
+    credentials: true,
+  })
+);
 
 const db = require("./db");
 const { requireDevice, assertUserInHousehold } = require("./middleware/device");
