@@ -4,13 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-**Frontend** (port 3000):
+**Frontend** (port 3000) — built with Vite:
 ```bash
 cd frontend
-npm start        # Dev server
+npm run dev      # Dev server (npm start is an alias)
 npm run build    # Production build → frontend/build/
-npm test         # Run tests
+npm run preview  # Serve the production build locally
 ```
+JSX lives in `.jsx` files; plain logic/util modules stay `.js`. The API base URL
+comes from `import.meta.env.VITE_API_URL` (set `VITE_API_URL` in the deploy env).
 
 **Backend** (port 8000):
 ```bash
@@ -26,9 +28,9 @@ No linting is configured. No backend tests exist.
 Full-stack app: React SPA + Express/Postgres backend. Auto-deploys to AWS Amplify on push to `master`.
 
 **Frontend (`frontend/src/`):**
-- `App.js` — React Router v6 routes
-- `Shell.js` — Persistent navbar wrapper around all pages; edit here to add/remove nav items
-- `pages/` — One file per page/route; create a new file here and add the route in `App.js` to add a page
+- `App.jsx` — React Router v6 routes
+- `Shell.jsx` — Persistent navbar wrapper around all pages; edit here to add/remove nav items
+- `pages/` — One file per page/route; create a new `.jsx` file here and add the route in `App.jsx` to add a page
 - Styled with Tailwind CSS
 
 **Backend (`backend/src/`):**

@@ -1,8 +1,17 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import "tailwindcss";
+
+/* Tailwind v4 defaults `border`/`divide` color to currentColor; restore the v3
+   default (gray-200) so existing unqualified `border` utilities look the same. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
 
 html {
   scrollbar-gutter: stable;
 }
-
