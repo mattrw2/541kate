@@ -1,6 +1,6 @@
--- Prize ideas. Once someone has put up their own prize for a challenge they can
--- suggest ideas; anyone who hasn't added a prize yet can pick one as theirs,
--- which removes it from the list.
+-- Prize suggestions. Anyone can suggest a prize for a challenge; anyone who
+-- hasn't added a prize yet can choose one as theirs, which removes it from the
+-- list.
 
 CREATE TABLE IF NOT EXISTS prize_suggestions (
   id SERIAL PRIMARY KEY,

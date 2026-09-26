@@ -95,10 +95,6 @@ const activityInTenant = async (activity_id, tenant_id) => {
   );
 };
 
-const runMigration = async (migration) => {
-  await sql.unsafe(migration);
-};
-
 const addActivity = async (user_id, duration, date, memo = "", photo_path = null, challenge_id, lat = null, lng = null) => {
   const result = await db.run(
     "INSERT INTO activities (user_id, duration, memo, date, photo_path, challenge_id, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
@@ -302,7 +298,6 @@ module.exports = {
   addActivity,
   updateActivityAddress,
   deleteActivity,
-  runMigration,
   incrementSusCount,
   decrementSusCount,
   getChallenge,

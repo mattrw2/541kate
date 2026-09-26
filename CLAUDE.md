@@ -53,10 +53,8 @@ Full-stack app: React SPA + Express/Postgres backend. Auto-deploys to AWS Amplif
 - `users` — `id`, `tenant_id` (FK), `username` (unique per tenant)
 - `challenges` — belong to one tenant via `tenant_id`; `unit` is `minutes` or `miles` (set at creation). `goal_minutes` and `activities.duration` keep their names but hold amounts in the challenge's unit (decimals allowed). Frontend unit labels/formatting live in `frontend/src/units.js`.
 - `activities` — `id`, `user_id` (FK), `duration`, `memo`, `date`, `photo_path`, `is_archived`, `is_boosted`, `sus_count`, `lat`, `lng`, `address`, `challenge_id`
-- `prizes` — one per user per challenge; `prize_suggestions` — ideas posted by users who already added a prize, removed when someone picks one as their prize
+- `prizes` — one per user per challenge; `prize_suggestions` — prizes anyone can suggest, removed when someone chooses one as their prize
 - `challenge_participants`, `activity_comments`
-
-Ad-hoc migrations can be applied via the `POST /users/secret` endpoint (accepts raw SQL — be careful).
 
 ## Environment
 

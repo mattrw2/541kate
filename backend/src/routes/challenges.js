@@ -203,15 +203,12 @@ router.get("/:id/prize-suggestions", async (req, res) => {
   }
 });
 
-// POST /:id/prize-suggestions - suggest an idea (only once you've added your own prize)
+// POST /:id/prize-suggestions - suggest a prize anyone can choose as theirs
 router.post("/:id/prize-suggestions", requireUser, async (req, res) => {
   const { id } = req.params;
   const text = (req.body.text || "").trim();
   if (!text) return res.status(400).send("text is required.");
   try {
-    if (!(await db.getUserPrizeForChallenge(id, req.userId))) {
-      return res.status(403).send("Add your own prize before suggesting prizes.");
-    }
     return res.json(await db.addPrizeSuggestion(id, req.userId, text));
   } catch (error) {
     console.error(error);

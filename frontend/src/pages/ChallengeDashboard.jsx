@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from "chart.js"
 import ChartDataLabels from "chartjs-plugin-datalabels"
-import { ArrowUpOnSquareIcon, TrophyIcon, BoltIcon, Cog6ToothIcon, ChevronDownIcon, ChevronUpIcon, ChartBarIcon, MagnifyingGlassIcon, ChatBubbleLeftIcon, LightBulbIcon } from "@heroicons/react/24/outline"
+import { ArrowUpOnSquareIcon, TrophyIcon, BoltIcon, Cog6ToothIcon, ChevronDownIcon, ChevronUpIcon, ChevronLeftIcon, ChevronRightIcon, ChartBarIcon, MagnifyingGlassIcon, ChatBubbleLeftIcon, LightBulbIcon } from "@heroicons/react/24/outline"
 import { apiUrl, apiFetch } from "../api"
 import { useCurrentUser, tenantInviteUrl } from "../UserContext"
 import { useCopyButton } from "../useCopyButton"
@@ -54,6 +54,48 @@ const QuickSelect = ({ options, value, onSelect, label }) => (
     ))}
   </div>
 )
+
+// Prize suggestion in the Add Prize modal: always the same height so cycling
+// through suggestions doesn't resize the modal. Long text is cut at six lines
+// and faded out, with a centered show-more chevron underneath. Keyed per
+// suggestion so it collapses again when cycling.
+const ClampedSuggestion = ({ text }) => {
+  const ref = useRef(null)
+  const [expanded, setExpanded] = useState(false)
+  const [overflows, setOverflows] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (el && !expanded) setOverflows(el.scrollHeight > el.clientHeight + 1)
+  }, [text, expanded])
+  return (
+    <>
+      <div className="relative">
+        <p
+          ref={ref}
+          className={`text-base text-gray-800 whitespace-pre-wrap break-words ${expanded ? "min-h-36" : "h-36 overflow-hidden"}`}
+        >
+          {text}
+        </p>
+        {overflows && !expanded && (
+          <div className="absolute bottom-0 inset-x-0 h-4 bg-linear-to-t from-yellow-50 to-transparent pointer-events-none" />
+        )}
+      </div>
+      <div className="flex justify-center h-4">
+        {overflows && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="text-yellow-700 hover:text-yellow-900"
+            title={expanded ? "Show less" : "Show more"}
+            aria-label={expanded ? "Show less" : "Show more"}
+          >
+            {expanded ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
+          </button>
+        )}
+      </div>
+    </>
+  )
+}
 
 const getSusKey = (userId) => `sus_votes_${userId}`
 const hasVotedSus = (userId, activityId) => {
@@ -314,6 +356,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
   const [formData, setFormData] = useState({ duration: "", date: today, memo: "", photo: null })
   const [tooltip, setTooltip] = useState(null)
   const [showPrizeForm, setShowPrizeForm] = useState(false)
+  const [suggestionIndex, setSuggestionIndex] = useState(0) // which suggestion the Add Prize modal shows
   const [prizeForm, setPrizeForm] = useState({ name: "", description: "" })
   const [ideaText, setIdeaText] = useState("")
   const [showIdeaForm, setShowIdeaForm] = useState(false)
@@ -595,7 +638,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
         <div className="mt-1 mb-4 bg-orange-100 px-4 py-3 flex items-center justify-between">
           <p className="text-sm font-medium text-orange-900">Add a prize to get started</p>
           <button
-            onClick={() => { if (currentUser) setShowPrizeForm(true) }}
+            onClick={() => setActiveTab("prizes")}
             className="text-sm font-semibold text-orange-900 underline ml-3 flex-shrink-0 hover:text-orange-700"
           >
             Add Prize
@@ -647,7 +690,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
               )}
             </div>
             <div className="flex gap-1.5 items-center">
-{prizes.some((p) => p.user_id === currentUser?.id) && !isComplete && (
+{!isComplete && (
                 <button onClick={() => setShowShare(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium flex items-center gap-1">
                   <ArrowUpOnSquareIcon className="w-3.5 h-3.5" />
                   Invite
@@ -768,7 +811,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
               {prizes.length === 0 && <p className="text-sm text-gray-400">No prizes yet.</p>}
               <ul className="space-y-3">
                 {prizes.map((prize) => (
-                  <li key={prize.id} className="flex items-start justify-between border-b border-gray-200 pb-3">
+                  <li key={prize.id} className="flex items-start justify-between border border-gray-200 rounded-lg px-3 py-2.5">
                     <div>
                       <p className="text-base font-medium text-gray-800 whitespace-pre-wrap">{prize.name}{prize.username && <span className="text-xs text-gray-400 font-normal ml-1.5">by <span className="text-orange-500">{prize.username}</span></span>}</p>
                       {prize.winner_username && (
@@ -787,11 +830,11 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                 ))}
               </ul>
 
-              {!isComplete && (prizeIdeas.length > 0 || prizes.some((p) => p.user_id === currentUser?.id)) && (
+              {!isComplete && (prizeIdeas.length > 0 || currentUser) && (
                 <div className="mt-8">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Prize suggestions</h3>
-                    {prizes.some((p) => p.user_id === currentUser?.id) && (
+                    {currentUser && (
                       <button
                         onClick={() => setShowIdeaForm(true)}
                         className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium flex items-center gap-1.5"
@@ -803,25 +846,27 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                   </div>
                   <p className="text-xs text-gray-400 mb-3">Haven't added a prize yet? Choose one of these as yours.</p>
                   {prizeIdeas.length === 0 && <p className="text-sm text-gray-400 mb-3">No suggestions yet.</p>}
-                  <ul className="space-y-2 mb-3">
+                  <ul className="space-y-3 mb-3">
                     {prizeIdeas.map((s) => (
-                      <li key={s.id} className="flex items-start justify-between text-sm">
+                      <li key={s.id} className="flex items-start justify-between text-sm border border-yellow-300 bg-yellow-50 rounded-lg px-3 py-2.5">
                         <span className="text-gray-800 whitespace-pre-wrap">
                           {s.text}
-                          {s.username && <span className="text-xs text-gray-400 ml-1.5">from <span className="text-orange-500">{s.username}</span></span>}
+                          {s.username && <span className="block text-xs text-gray-400 mt-0.5">suggested by <span className="text-orange-500">{s.username}</span></span>}
                         </span>
-                        {currentUser && !prizes.some((p) => p.user_id === currentUser.id) && (
-                          <button
-                            onClick={() => addPrizeMutation.mutate({ name: s.text, description: s.text, suggestion_id: s.id })}
-                            disabled={addPrizeMutation.isPending}
-                            className="ml-3 flex-shrink-0 bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1 text-xs font-medium disabled:opacity-50"
-                          >
-                            Choose
-                          </button>
-                        )}
-                        {s.user_id === currentUser?.id && (
-                          <button onClick={() => removeIdea.mutate(s.id)} className="ml-3 text-gray-400 hover:text-red-500 text-xs" title="Remove">✕</button>
-                        )}
+                        <div className="ml-3 flex-shrink-0 flex items-center gap-3">
+                          {currentUser && !prizes.some((p) => p.user_id === currentUser.id) && (
+                            <button
+                              onClick={() => addPrizeMutation.mutate({ name: s.text, description: s.text, suggestion_id: s.id })}
+                              disabled={addPrizeMutation.isPending}
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1 text-xs font-medium disabled:opacity-50"
+                            >
+                              Choose
+                            </button>
+                          )}
+                          {s.user_id === currentUser?.id && (
+                            <button onClick={() => removeIdea.mutate(s.id)} className="text-gray-400 hover:text-red-500 text-xs" title="Remove">✕</button>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -952,13 +997,53 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
             <p className="text-xs text-gray-400 mb-3">You ({currentUser?.username}) are providing this prize.</p>
             {tooltip && <div className="text-sm text-red-500 mb-3">{tooltip}</div>}
             <div className="space-y-3">
-              <textarea value={prizeForm.description} onChange={(e) => setPrizeForm((f) => ({ ...f, description: e.target.value }))} placeholder="Describe the prize" rows={3} className="border rounded px-2 py-1 w-full text-base" />
-              <div className="flex justify-end gap-2 pt-1">
-                <button type="button" onClick={() => setShowPrizeForm(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
+              <textarea value={prizeForm.description} onChange={(e) => setPrizeForm((f) => ({ ...f, description: e.target.value }))} placeholder="Describe your prize" rows={3} className="border rounded px-2 py-1 w-full text-base" />
+              <div className="flex justify-end gap-2 ">
                 <button type="button" onClick={handleAddPrize} disabled={addPrizeMutation.isPending} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-4 py-1.5 text-sm disabled:opacity-50">
                   {addPrizeMutation.isPending ? "Saving..." : "Save"}
                 </button>
+                <button type="button" onClick={() => setShowPrizeForm(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
               </div>
+              {prizeIdeas.length > 0 && (
+                <div className="flex items-center gap-3 text-xs text-gray-400">
+                  <div className="flex-1 border-t border-gray-200" />
+                  or select from suggested
+                  <div className="flex-1 border-t border-gray-200" />
+                </div>
+              )}
+              {prizeIdeas.length > 0 && (() => {
+                const i = suggestionIndex % prizeIdeas.length
+                const s = prizeIdeas[i]
+                const step = (d) => setSuggestionIndex((i + d + prizeIdeas.length) % prizeIdeas.length)
+                return (
+                  <div className="border border-yellow-300 bg-yellow-50 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">
+                        Suggested{s.username && <> by <span className="text-orange-500 normal-case tracking-normal">{s.username}</span></>}
+                      </p>
+                      {prizeIdeas.length > 1 && (
+                        <div className="flex gap-1">
+                          <button type="button" onClick={() => step(-1)} className="p-1 rounded text-gray-500 hover:bg-yellow-100" title="Previous">
+                            <ChevronLeftIcon className="w-4 h-4" />
+                          </button>
+                          <button type="button" onClick={() => step(1)} className="p-1 rounded text-gray-500 hover:bg-yellow-100" title="Next">
+                            <ChevronRightIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <ClampedSuggestion key={s.id} text={s.text} />
+                    <button
+                      type="button"
+                      onClick={() => addPrizeMutation.mutate({ name: s.text, description: s.text, suggestion_id: s.id })}
+                      disabled={addPrizeMutation.isPending}
+                      className="mt-2 w-full bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+                    >
+                      Offer this prize
+                    </button>
+                  </div>
+                )
+              })()}
             </div>
           </Dialog.Panel>
         </div>
@@ -978,10 +1063,10 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
               <textarea value={ideaText} onChange={(e) => setIdeaText(e.target.value)} placeholder="Describe the prize" rows={3} autoFocus className="border rounded px-2 py-1 w-full text-base" />
               {addIdea.isError && <p className="text-sm text-red-500">{addIdea.error.message}</p>}
               <div className="flex justify-end gap-2 pt-1">
-                <button type="button" onClick={() => setShowIdeaForm(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
                 <button type="button" onClick={() => ideaText.trim() && addIdea.mutate(ideaText.trim())} disabled={addIdea.isPending || !ideaText.trim()} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-4 py-1.5 text-sm disabled:opacity-50">
                   {addIdea.isPending ? "Saving..." : "Suggest"}
                 </button>
+                <button type="button" onClick={() => setShowIdeaForm(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
               </div>
             </div>
           </Dialog.Panel>
@@ -1006,7 +1091,6 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                 className="border rounded px-2 py-1 w-full text-base"
               />
               <div className="flex justify-end gap-2 pt-1">
-                <button type="button" onClick={() => setEditingPrize(null)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
                 <button
                   type="button"
                   onClick={() => editPrizeMutation.mutate({ prizeId: editingPrize.id, body: { name: editingPrize.description, description: editingPrize.description } })}
@@ -1015,6 +1099,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                 >
                   {editPrizeMutation.isPending ? "Saving..." : "Save"}
                 </button>
+                <button type="button" onClick={() => setEditingPrize(null)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
               </div>
             </div>
           </Dialog.Panel>
@@ -1078,10 +1163,10 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
               </div>
 
               <div className="flex justify-end gap-2 pt-1">
-                <button type="button" onClick={() => setShowForm(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
                 <button type="button" onClick={handleSave} disabled={saveActivity.isPending} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-4 py-1.5 text-sm disabled:opacity-50">
                   {saveActivity.isPending ? "Saving..." : "Save"}
                 </button>
+                <button type="button" onClick={() => setShowForm(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
               </div>
             </div>
           </Dialog.Panel>
