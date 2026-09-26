@@ -9,14 +9,13 @@ import Home from "./pages/Home";
 import Challenges from "./pages/Challenges";
 import CreateChallenge from "./pages/CreateChallenge";
 import ChallengeDashboard from "./pages/ChallengeDashboard";
-import ManageChallenge from "./pages/ManageChallenge";
 import Recap from "./pages/Recap";
 import Onboarding from "./pages/Onboarding";
-import JoinChallenge from "./pages/JoinChallenge";
+import JoinTenant from "./pages/JoinTenant";
 import { useCurrentUser } from "./UserContext";
 
-// Challenge pages require a trusted device / household. Static personal pages stay public.
-const RequireHousehold = ({ children }) => {
+// Challenge pages require a tenant key. Static personal pages stay public.
+const RequireTenant = ({ children }) => {
   const { status } = useCurrentUser();
   if (status === "loading") return <div className="p-8 text-center text-gray-500">Loading…</div>;
   if (status === "unauthenticated") return <Onboarding />;
@@ -33,12 +32,11 @@ const App = () => (
         <Route exact path="/review" element={<Review />} />
         <Route exact path="/rent-a-backpacker" element={<RentABackpacker/>} />
         <Route exact path="/chart" element={<Navigate to="/challenge/1" />} />
-        <Route exact path="/join/:token" element={<JoinChallenge />} />
-        <Route exact path="/challenges" element={<RequireHousehold><Challenges /></RequireHousehold>} />
-        <Route exact path="/challenge/new" element={<RequireHousehold><CreateChallenge /></RequireHousehold>} />
-        <Route exact path="/challenge/:id" element={<RequireHousehold><ChallengeDashboard /></RequireHousehold>} />
-        <Route exact path="/challenge/:id/manage" element={<RequireHousehold><ManageChallenge /></RequireHousehold>} />
-        <Route exact path="/challenge/:id/recap" element={<RequireHousehold><Recap /></RequireHousehold>} />
+        <Route exact path="/join/:key" element={<JoinTenant />} />
+        <Route exact path="/challenges" element={<RequireTenant><Challenges /></RequireTenant>} />
+        <Route exact path="/challenge/new" element={<RequireTenant><CreateChallenge /></RequireTenant>} />
+        <Route exact path="/challenge/:id" element={<RequireTenant><ChallengeDashboard /></RequireTenant>} />
+        <Route exact path="/challenge/:id/recap" element={<RequireTenant><Recap /></RequireTenant>} />
       </Routes>
     </Shell>
   </Router>

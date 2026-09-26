@@ -11,10 +11,12 @@ import {
   Tooltip,
 } from "chart.js"
 import ChartDataLabels from "chartjs-plugin-datalabels"
-import { ArrowUpOnSquareIcon, TrophyIcon, BoltIcon, Cog6ToothIcon, ChevronDownIcon, ChevronUpIcon, ChartBarIcon, MagnifyingGlassIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline"
+import { ArrowUpOnSquareIcon, TrophyIcon, BoltIcon, Cog6ToothIcon, ChevronDownIcon, ChevronUpIcon, ChartBarIcon, MagnifyingGlassIcon, ChatBubbleLeftIcon, LightBulbIcon } from "@heroicons/react/24/outline"
 import { apiUrl, apiFetch } from "../api"
-import { useCurrentUser } from "../UserContext"
+import { useCurrentUser, tenantInviteUrl } from "../UserContext"
 import { useCopyButton } from "../useCopyButton"
+import { unitOf, roundAmount, formatAmount } from "../units"
+import { compressImage } from "../compressImage"
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, ChartDataLabels)
 
@@ -65,7 +67,7 @@ const setSusVote = (userId, activityId, val) => {
   localStorage.setItem(getSusKey(userId), JSON.stringify(updated))
 }
 
-const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, currentUser, challengeId, isComplete }) => {
+const ActivityItem = ({ activity, unit, onIncrementSus, onDecrementSus, onDelete, currentUser, challengeId, isComplete }) => {
   const locationAddress = activity.address
   const [showFullPhoto, setShowFullPhoto] = useState(false)
   const [susCount, setSusCount] = useState(activity.sus_count || 0)
@@ -118,7 +120,7 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
 
   const handleAddComment = () => {
     if (!commentText.trim()) return
-    addComment.mutate({ user_id: currentUser?.id, text: commentText.trim() })
+    addComment.mutate({ text: commentText.trim() })
   }
 
   const susActive = voted || hovering
@@ -154,7 +156,7 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
                 </button>
               )}
               <span className="text-base font-semibold text-gray-800 whitespace-nowrap">
-                {activity.duration}<span className="text-xs font-normal text-gray-400 ml-0.5">min</span>
+                {roundAmount(activity.duration)}<span className="text-xs font-normal text-gray-400 ml-0.5">{unit.short}</span>
               </span>
               {onDelete && (
                 <button
@@ -175,10 +177,7 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
               onClick={() => activity.photo_path && setShowFullPhoto((v) => !v)}
             >
               {activity.memo && (
-                <div className="text-sm text-gray-500">{activity.memo}{activity.is_boosted ? <span title="Boosted" className="ml-1">⚡</span> : null}</div>
-              )}
-              {!activity.memo && activity.is_boosted && (
-                <span title="Boosted">⚡</span>
+                <div className="text-sm text-gray-500">{activity.memo}</div>
               )}
               {activity.lat != null && activity.lng != null && (
                 <a
@@ -250,7 +249,7 @@ const ActivityItem = ({ activity, onIncrementSus, onDecrementSus, onDelete, curr
 const ChallengeDashboard = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { currentUser } = useCurrentUser()
+  const { currentUser, tenant } = useCurrentUser()
   const queryClient = useQueryClient()
 
   const challengeQuery = useQuery({
@@ -259,7 +258,7 @@ const ChallengeDashboard = () => {
     queryFn: async () => {
       const r = await apiFetch(`${apiUrl}/challenges/${id}`)
       if (!r.ok) {
-        const err = new Error(r.status === 403 ? "forbidden" : "unavailable")
+        const err = new Error(r.status === 404 ? "not found" : "unavailable")
         err.status = r.status
         throw err
       }
@@ -267,15 +266,20 @@ const ChallengeDashboard = () => {
     },
   })
   const challenge = challengeQuery.data
+  const unit = unitOf(challenge)
 
-  const inviteUrl = challenge?.invite_token
-    ? `${window.location.origin}/join/${challenge.invite_token}`
-    : window.location.href
+  const inviteUrl = tenantInviteUrl(tenant, id) || window.location.href
 
 const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
     queryKey: ["challenge", id, "activities"],
     enabled: challengeQuery.isSuccess,
     queryFn: () => apiFetch(`${apiUrl}/challenges/${id}/activities`).then((r) => r.json()),
+  })
+
+  const { data: prizeIdeas = [] } = useQuery({
+    queryKey: ["challenge", id, "prize-suggestions"],
+    enabled: challengeQuery.isSuccess,
+    queryFn: () => apiFetch(`${apiUrl}/challenges/${id}/prize-suggestions`).then((r) => r.json()),
   })
 
   const { data: prizes = [], isSuccess: prizesLoaded } = useQuery({
@@ -307,10 +311,12 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
   const [showAllActivities, setShowAllActivities] = useState(false)
   const [activitySearch, setActivitySearch] = useState("")
   const [chartTodayOnly, setChartTodayOnly] = useState(false)
-  const [formData, setFormData] = useState({ duration: "", date: today, memo: "", photo: null, is_boosted: false })
+  const [formData, setFormData] = useState({ duration: "", date: today, memo: "", photo: null })
   const [tooltip, setTooltip] = useState(null)
   const [showPrizeForm, setShowPrizeForm] = useState(false)
   const [prizeForm, setPrizeForm] = useState({ name: "", description: "" })
+  const [ideaText, setIdeaText] = useState("")
+  const [showIdeaForm, setShowIdeaForm] = useState(false)
   const [editingPrize, setEditingPrize] = useState(null)
   const [showManage, setShowManage] = useState(false)
   const [showShare, setShowShare] = useState(false)
@@ -349,8 +355,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
       apiFetch(`${apiUrl}/activities`, { method: "POST", body: fd }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "activities"] })
-      queryClient.invalidateQueries({ queryKey: ["challenge", id, "duration"] })
-      setFormData({ duration: "", date: today, memo: "", photo: null, is_boosted: false })
+      setFormData({ duration: "", date: today, memo: "", photo: null })
       setShowForm(false)
     },
   })
@@ -376,7 +381,6 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
       apiFetch(`${apiUrl}/activities/${activityId}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "activities"] })
-      queryClient.invalidateQueries({ queryKey: ["challenge", id, "duration"] })
     },
   })
 
@@ -406,18 +410,37 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
       }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "prizes"] })
+      queryClient.invalidateQueries({ queryKey: ["challenge", id, "prize-suggestions"] })
       setPrizeForm({ name: "", description: "" })
       setShowPrizeForm(false)
     },
   })
 
-  const claimPrize = useMutation({
-    mutationFn: (prizeId) =>
-      apiFetch(`${apiUrl}/challenges/${id}/prizes/${prizeId}/claim`, {
+  const addIdea = useMutation({
+    mutationFn: async (text) => {
+      const r = await apiFetch(`${apiUrl}/challenges/${id}/prize-suggestions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: currentUser?.id }),
-      }).then((r) => r.json()),
+        body: JSON.stringify({ text }),
+      })
+      if (!r.ok) throw new Error(await r.text())
+      return r.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["challenge", id, "prize-suggestions"] })
+      setIdeaText("")
+      setShowIdeaForm(false)
+    },
+  })
+
+  const removeIdea = useMutation({
+    mutationFn: (ideaId) => apiFetch(`${apiUrl}/challenges/${id}/prize-suggestions/${ideaId}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["challenge", id, "prize-suggestions"] }),
+  })
+
+  const claimPrize = useMutation({
+    mutationFn: (prizeId) =>
+      apiFetch(`${apiUrl}/challenges/${id}/prizes/${prizeId}/claim`, { method: "POST" }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "prizes"] })
     },
@@ -437,14 +460,14 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
   })
 
   const handleSave = () => {
-    const { duration, date, memo, photo, is_boosted } = formData
+    const { duration, date, memo, photo } = formData
     if (!date) { showTooltipMsg("Please enter a date."); return }
-    if (!duration || duration < 0) { showTooltipMsg("Please enter a valid time."); return }
+    if (!(parseFloat(duration) > 0)) { showTooltipMsg(`Please enter a valid number of ${unit.label.toLowerCase()}.`); return }
 
-    const submit = (lat, lng) => {
+    const submit = async (lat, lng) => {
       const fd = new FormData()
-      fd.append("data", JSON.stringify({ user_id: currentUser.id, duration, date, memo, challenge_id: id, lat, lng, is_boosted }))
-      if (photo) fd.append("photo", photo)
+      fd.append("data", JSON.stringify({ duration, date, memo, challenge_id: id, lat, lng }))
+      if (photo) fd.append("photo", await compressImage(photo))
       saveActivity.mutate(fd)
     }
 
@@ -460,7 +483,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
   const handleAddPrize = () => {
     if (!prizeForm.description) { showTooltipMsg("Please enter a prize description."); return }
-    addPrizeMutation.mutate({ name: prizeForm.description, description: prizeForm.description, user_id: currentUser?.id })
+    addPrizeMutation.mutate({ name: prizeForm.description, description: prizeForm.description })
   }
 
   const chartOptions = challenge
@@ -471,7 +494,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
         scales: {
           x: {
             beginAtZero: true,
-            ticks: { callback: (value) => `${value}m` },
+            ticks: { callback: (value) => `${value}${unit.tick}` },
           },
           y: { beginAtZero: true, grid: { display: false }, ticks: { autoSkip: false } },
         },
@@ -480,6 +503,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
           tooltip: {
             callbacks: {
               label: (context) => {
+                if (challenge.unit === "miles") return formatAmount(context.parsed.x, unit)
                 const totalMin = Math.round(context.parsed.x)
                 const h = Math.floor(totalMin / 60)
                 const m = totalMin % 60
@@ -544,15 +568,15 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
   }
 
   if (challengeQuery.isError) {
-    const forbidden = challengeQuery.error?.status === 403
+    const notFound = challengeQuery.error?.status === 404
     return (
       <div className="max-w-md mx-auto px-4 py-16 text-center">
         <h2 className="text-xl font-semibold text-gray-800 mb-2">
-          {forbidden ? "You're not invited to this challenge" : "Challenge unavailable"}
+          {notFound ? "Challenge not found" : "Challenge unavailable"}
         </h2>
         <p className="text-gray-500 text-sm mb-6">
-          {forbidden
-            ? "Ask the organizer to share an invite link so you can join."
+          {notFound
+            ? "It doesn't exist, or it belongs to a different group."
             : "This challenge couldn't be loaded."}
         </p>
         <button
@@ -647,7 +671,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                 {(challenge.start_date || challenge.end_date) && (
                   <span>{formatDate(challenge.start_date)}{challenge.start_date && challenge.end_date ? " – " : ""}{formatDate(challenge.end_date)}</span>
                 )}
-                <span>Goal: {challenge.goal_minutes} min</span>
+                <span>Goal: {formatAmount(challenge.goal_minutes, unit)}</span>
                 {challenge.admin_username && <span>by {challenge.admin_username}</span>}
               </div>
               <button onClick={() => setActiveTab("prizes")} className="text-xs text-yellow-600 hover:underline mt-2 block">View prizes</button>
@@ -707,6 +731,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                     <ActivityItem
                       key={activity.id}
                       activity={activity}
+                      unit={unit}
                       onIncrementSus={(aid) => incrementSus.mutate(aid)}
                       onDecrementSus={(aid) => decrementSus.mutate(aid)}
                       currentUser={currentUser}
@@ -761,6 +786,47 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                   </li>
                 ))}
               </ul>
+
+              {!isComplete && (prizeIdeas.length > 0 || prizes.some((p) => p.user_id === currentUser?.id)) && (
+                <div className="mt-8">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Prize suggestions</h3>
+                    {prizes.some((p) => p.user_id === currentUser?.id) && (
+                      <button
+                        onClick={() => setShowIdeaForm(true)}
+                        className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium flex items-center gap-1.5"
+                      >
+                        <LightBulbIcon className="w-4 h-4" />
+                        Suggest prize
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mb-3">Haven't added a prize yet? Choose one of these as yours.</p>
+                  {prizeIdeas.length === 0 && <p className="text-sm text-gray-400 mb-3">No suggestions yet.</p>}
+                  <ul className="space-y-2 mb-3">
+                    {prizeIdeas.map((s) => (
+                      <li key={s.id} className="flex items-start justify-between text-sm">
+                        <span className="text-gray-800 whitespace-pre-wrap">
+                          {s.text}
+                          {s.username && <span className="text-xs text-gray-400 ml-1.5">from <span className="text-orange-500">{s.username}</span></span>}
+                        </span>
+                        {currentUser && !prizes.some((p) => p.user_id === currentUser.id) && (
+                          <button
+                            onClick={() => addPrizeMutation.mutate({ name: s.text, description: s.text, suggestion_id: s.id })}
+                            disabled={addPrizeMutation.isPending}
+                            className="ml-3 flex-shrink-0 bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1 text-xs font-medium disabled:opacity-50"
+                          >
+                            Choose
+                          </button>
+                        )}
+                        {s.user_id === currentUser?.id && (
+                          <button onClick={() => removeIdea.mutate(s.id)} className="ml-3 text-gray-400 hover:text-red-500 text-xs" title="Remove">✕</button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -822,7 +888,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
             <section className="mb-6">
               {manageSaveSuccess && <div className="text-green-600 text-sm mb-2">Saved!</div>}
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault()
                   const fd = new FormData()
                   fd.append("name", manageForm.name)
@@ -830,7 +896,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                   fd.append("goal_minutes", manageForm.goal_minutes)
                   fd.append("start_date", manageForm.start_date || "")
                   fd.append("end_date", manageForm.end_date || "")
-                  if (managePhoto) fd.append("photo", managePhoto)
+                  if (managePhoto) fd.append("photo", await compressImage(managePhoto))
                   updateChallenge.mutate(fd)
                 }}
                 className="space-y-4"
@@ -844,8 +910,8 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                   <textarea value={manageForm.description} onChange={(e) => setManageForm((f) => ({ ...f, description: e.target.value }))} className="text-base border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400" rows={2} />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Goal (minutes)</label>
-                  <input type="number" value={manageForm.goal_minutes} onChange={(e) => setManageForm((f) => ({ ...f, goal_minutes: parseInt(e.target.value) || 0 }))} className="text-base border border-gray-200 rounded px-2 py-1.5 w-32 focus:outline-none focus:border-yellow-400" min="0" />
+                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Goal ({unit.label.toLowerCase()})</label>
+                  <input type="number" value={manageForm.goal_minutes} onChange={(e) => setManageForm((f) => ({ ...f, goal_minutes: parseFloat(e.target.value) || 0 }))} className="text-base border border-gray-200 rounded px-2 py-1.5 w-32 focus:outline-none focus:border-yellow-400" min="0" step={unit.step} />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Start date</label>
@@ -898,6 +964,30 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
         </div>
       </Dialog>
 
+      {/* Suggest prize modal */}
+      <Dialog open={showIdeaForm} onClose={() => setShowIdeaForm(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex justify-between items-center mb-4">
+              <Dialog.Title className="text-lg font-light text-gray-800">Suggest a Prize</Dialog.Title>
+              <button onClick={() => setShowIdeaForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+            </div>
+            <p className="text-xs text-gray-400 mb-3">Anyone who hasn't added a prize yet can choose it as theirs.</p>
+            <div className="space-y-3">
+              <textarea value={ideaText} onChange={(e) => setIdeaText(e.target.value)} placeholder="Describe the prize" rows={3} autoFocus className="border rounded px-2 py-1 w-full text-base" />
+              {addIdea.isError && <p className="text-sm text-red-500">{addIdea.error.message}</p>}
+              <div className="flex justify-end gap-2 pt-1">
+                <button type="button" onClick={() => setShowIdeaForm(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
+                <button type="button" onClick={() => ideaText.trim() && addIdea.mutate(ideaText.trim())} disabled={addIdea.isPending || !ideaText.trim()} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-4 py-1.5 text-sm disabled:opacity-50">
+                  {addIdea.isPending ? "Saving..." : "Suggest"}
+                </button>
+              </div>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+
       {/* Edit Prize modal */}
       <Dialog open={!!editingPrize} onClose={() => setEditingPrize(null)} className="relative z-50">
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
@@ -936,8 +1026,15 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
-            <div className="flex justify-between items-center mb-4">
-              <Dialog.Title className="text-lg font-light text-gray-800">Add Activity</Dialog.Title>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <Dialog.Title className="text-lg font-light text-gray-800">Add Activity</Dialog.Title>
+                {currentUser && (
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    Logging as <span className="font-semibold text-gray-800">{currentUser.username}</span>
+                  </p>
+                )}
+              </div>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
             </div>
 
@@ -948,10 +1045,10 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
 
               <div className="space-y-2">
                 <QuickSelect
-                  options={[5, 10, 30, 45, 60]}
-                  value={parseInt(formData.duration) || null}
+                  options={unit.quickPicks}
+                  value={parseFloat(formData.duration) || null}
                   onSelect={(m) => setFormData((f) => ({ ...f, duration: String(m) }))}
-                  label={(m) => `${m}m`}
+                  label={(m) => `${m}${unit.tick}`}
                 />
                 <div className="flex items-center gap-2">
                   <input
@@ -960,19 +1057,11 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                     onChange={(e) => setFormData((f) => ({ ...f, duration: e.target.value }))}
                     placeholder="0"
                     min="0"
+                    step={unit.step}
                     className="w-16 px-2 py-1 border rounded text-base"
                     style={{ WebkitAppearance: "none", MozAppearance: "textfield" }}
                   />
-                  <span className="text-sm text-gray-500">minutes</span>
-                  {formData.duration > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData((f) => f.is_boosted ? { ...f, duration: String(Math.round(parseInt(f.duration) / 2)), is_boosted: false } : { ...f, duration: String(parseInt(f.duration) * 2), is_boosted: true })}
-                      className={`text-xs border rounded px-2 py-1 transition-colors ${formData.is_boosted ? "bg-yellow-500 text-white border-yellow-500" : "bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200"}`}
-                    >
-                      {formData.is_boosted ? "⚡ Boosted!" : "Boost my exercise"}
-                    </button>
-                  )}
+                  <span className="text-sm text-gray-500">{unit.label.toLowerCase()}</span>
                 </div>
               </div>
 

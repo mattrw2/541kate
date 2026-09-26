@@ -1,6 +1,6 @@
 import React from 'react'
 // import kate image
-import kate from '../kate.png'
+import kate from '../kate.jpg'
 
 
 

@@ -18,7 +18,7 @@ comes from `import.meta.env.VITE_API_URL` (set `VITE_API_URL` in the deploy env)
 ```bash
 cd backend
 npm start        # Start server
-npm run watch    # Dev mode with nodemon (auto-reload)
+npm run dev      # Dev mode with nodemon, restarts on file changes (npm run watch is an alias)
 ```
 
 No linting is configured. No backend tests exist.
@@ -36,7 +36,8 @@ Full-stack app: React SPA + Express/Postgres backend. Auto-deploys to AWS Amplif
 **Backend (`backend/src/`):**
 - `server.js` — Express setup, static file serving, route registration
 - `db.js` — Postgres connection + runtime queries via Porsager's `postgres` package, wrapped to expose `db.run / db.get / db.all` (`?` placeholders are auto-converted to `$1, $2, …`). Does NOT manage schema.
-- `routes/` — Route handlers (users, activities, challenges)
+- `routes/` — Route handlers (tenants, users, activities, challenges)
+- `middleware/tenant.js` — Auth. Every request (except creating/joining a tenant) sends the tenant's secret key in `X-Tenant-Key`; the acting user goes in `X-User-Id`. Any user in a tenant may act as any other user in it, so the user id is only checked for tenant membership. All reads/writes are scoped to that tenant.
 
 **Backend (`backend/migrations/`):**
 - Numbered `.sql` files (e.g. `0001_initial_schema.sql`). Run in lexicographic order by `npm run migrate`. Applied migrations are recorded in the `schema_migrations` table; reruns are no-ops.
@@ -48,9 +49,12 @@ Full-stack app: React SPA + Express/Postgres backend. Auto-deploys to AWS Amplif
 **Database:** Postgres, connection string in `DATABASE_URL`. Schema is managed by migration files; **run `npm run migrate` after pulling schema changes, before starting the server**. SSL is auto-enabled when the URL points at Render/Supabase/Neon/AWS. Photo uploads stored in `backend/database/uploads/` (Render persistent disk) and served as static files.
 
 **Key schema:**
-- `users` — `id`, `username` (unique)
+- `tenants` — `id`, `name`, `secret_key` (unique; shared by all the tenant's users, used to invite others)
+- `users` — `id`, `tenant_id` (FK), `username` (unique per tenant)
+- `challenges` — belong to one tenant via `tenant_id`; `unit` is `minutes` or `miles` (set at creation). `goal_minutes` and `activities.duration` keep their names but hold amounts in the challenge's unit (decimals allowed). Frontend unit labels/formatting live in `frontend/src/units.js`.
 - `activities` — `id`, `user_id` (FK), `duration`, `memo`, `date`, `photo_path`, `is_archived`, `is_boosted`, `sus_count`, `lat`, `lng`, `address`, `challenge_id`
-- `challenges`, `challenge_participants`, `prizes`, `activity_comments`
+- `prizes` — one per user per challenge; `prize_suggestions` — ideas posted by users who already added a prize, removed when someone picks one as their prize
+- `challenge_participants`, `activity_comments`
 
 Ad-hoc migrations can be applied via the `POST /users/secret` endpoint (accepts raw SQL — be careful).
 

@@ -1,23 +1,26 @@
 const express = require("express");
 const db = require("../db");
-const { requireDevice, assertUserInHousehold } = require("../middleware/device");
+const { requireTenant, isId } = require("../middleware/tenant");
 
 const router = express.Router();
 
-// All activity actions require a trusted device.
-router.use(requireDevice);
+// All activity actions require a tenant key, and act only on activities in
+// challenges owned by that tenant.
+router.use(requireTenant);
 
-router.get("/list", async (req, res) => {
+const requireActivityInTenant = async (req, res, next) => {
     try {
-        const activities = await db.listActivities();
-        return res.json(activities);
+        if (!isId(req.params.id) || !(await db.activityInTenant(req.params.id, req.tenantId))) {
+            return res.status(404).send("Activity not found.");
+        }
+        next();
     } catch (error) {
         console.error(error);
-        res.status(500).send("An error occurred while getting activities.");
+        res.status(500).send("An error occurred while checking access.");
     }
-    });
+};
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireActivityInTenant, async (req, res) => {
     const { id } = req.params;
     const { lat, lng, deleted_by } = req.body || {};
     try {
@@ -32,26 +35,13 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
-router.get("/:id/comments", async (req, res) => {
+router.post("/:id/comments", requireActivityInTenant, async (req, res) => {
     const { id } = req.params;
-    try {
-        const comments = await db.getActivityComments(id);
-        return res.json(comments);
-    } catch (error) {
-        console.error(error);
-        return res.status(500).send("An error occurred while getting comments.");
-    }
-});
-
-router.post("/:id/comments", async (req, res) => {
-    const { id } = req.params;
-    const { user_id, text, lat, lng } = req.body;
+    const { text, lat, lng } = req.body;
     if (!text) return res.status(400).send("Text is required.");
-    if (user_id && !(await assertUserInHousehold(user_id, req.householdId))) {
-        return res.status(403).send("That user is not in your household.");
-    }
     try {
-        const comment = await db.addActivityComment(id, user_id, text, lat, lng);
+        // Comments are by the acting user (anonymous if none given).
+        const comment = await db.addActivityComment(id, req.userId, text, lat, lng);
         return res.json(comment);
     } catch (error) {
         console.error(error);
@@ -59,7 +49,7 @@ router.post("/:id/comments", async (req, res) => {
     }
 });
 
-router.post("/increment/:id", async (req, res) => {
+router.post("/increment/:id", requireActivityInTenant, async (req, res) => {
     const { id } = req.params;
     try {
         await db.incrementSusCount(id);
@@ -70,7 +60,7 @@ router.post("/increment/:id", async (req, res) => {
     }
 })
 
-router.post("/decrement/:id", async (req, res) => {
+router.post("/decrement/:id", requireActivityInTenant, async (req, res) => {
     const { id } = req.params;
     try {
         await db.decrementSusCount(id);

@@ -1,4 +1,3 @@
-const crypto = require("crypto");
 const { sql } = require("./config");
 const { paramize } = require("./paramize");
 
@@ -20,107 +19,79 @@ const db = {
   },
 };
 
-const getUserById = async (id) => {
-  return await db.get("SELECT * FROM users WHERE id = ?", [id]);
+// --- Tenants ---
+
+const createTenant = async (name, secret_key) => {
+  const result = await db.run("INSERT INTO tenants (name, secret_key) VALUES (?, ?) RETURNING id", [name, secret_key]);
+  return await db.get("SELECT * FROM tenants WHERE id = ?", [result.lastID]);
 };
 
-// --- Households & trusted devices ---
-
-const createHousehold = async (name, code) => {
-  const result = await db.run("INSERT INTO households (name, code) VALUES (?, ?) RETURNING id", [name, code]);
-  return await db.get("SELECT * FROM households WHERE id = ?", [result.lastID]);
+const listTenants = async () => {
+  return await db.all("SELECT id, name FROM tenants ORDER BY LOWER(name)");
 };
 
-const getHouseholdById = async (id) => {
-  return await db.get("SELECT * FROM households WHERE id = ?", [id]);
+const getTenantByName = async (name) => {
+  return await db.get("SELECT * FROM tenants WHERE LOWER(name) = LOWER(?)", [name]);
 };
 
-const getHouseholdByCode = async (code) => {
-  return await db.get("SELECT * FROM households WHERE code = ?", [code]);
+const getTenantById = async (id) => {
+  return await db.get("SELECT * FROM tenants WHERE id = ?", [id]);
 };
 
-const getHouseholdUsers = async (household_id) => {
-  return await db.all("SELECT * FROM users WHERE household_id = ? ORDER BY username", [household_id]);
+const getTenantBySecretKey = async (secret_key) => {
+  return await db.get("SELECT * FROM tenants WHERE secret_key = ?", [secret_key]);
 };
 
-const addUserToHousehold = async (household_id, username) => {
+const updateTenantSecretKey = async (id, secret_key) => {
+  await db.run("UPDATE tenants SET secret_key = ? WHERE id = ?", [secret_key, id]);
+  return await getTenantById(id);
+};
+
+const getTenantUsers = async (tenant_id) => {
+  return await db.all("SELECT * FROM users WHERE tenant_id = ? ORDER BY username", [tenant_id]);
+};
+
+const getTenantUserById = async (tenant_id, id) => {
+  return await db.get("SELECT * FROM users WHERE id = ? AND tenant_id = ?", [id, tenant_id]);
+};
+
+const getTenantUserByUsername = async (tenant_id, username) => {
+  return await db.get("SELECT * FROM users WHERE tenant_id = ? AND username = ?", [tenant_id, username]);
+};
+
+const addUserToTenant = async (tenant_id, username) => {
   const result = await db.run(
-    "INSERT INTO users (household_id, username) VALUES (?, ?) RETURNING id",
-    [household_id, username]
+    "INSERT INTO users (tenant_id, username) VALUES (?, ?) RETURNING id",
+    [tenant_id, username]
   );
   return await db.get("SELECT * FROM users WHERE id = ?", [result.lastID]);
 };
 
-const userInHousehold = async (user_id, household_id) => {
-  return await db.get("SELECT 1 FROM users WHERE id = ? AND household_id = ?", [user_id, household_id]);
-};
+// --- Tenant scoping ---
 
-const addDevice = async (household_id, token_hash, label = null) => {
-  const result = await db.run(
-    "INSERT INTO devices (household_id, token_hash, label) VALUES (?, ?, ?) RETURNING id",
-    [household_id, token_hash, label]
-  );
-  return await db.get("SELECT * FROM devices WHERE id = ?", [result.lastID]);
-};
-
-const getDeviceByTokenHash = async (token_hash) => {
-  return await db.get("SELECT * FROM devices WHERE token_hash = ?", [token_hash]);
-};
-
-const touchDevice = async (id) => {
-  await db.run("UPDATE devices SET last_seen_at = NOW() WHERE id = ?", [id]);
-};
-
-const deleteDevice = async (id) => {
-  await db.run("DELETE FROM devices WHERE id = ?", [id]);
-};
-
-// --- Challenge invites (visibility) ---
-
-const getChallengesForHousehold = async (household_id) => {
+const getChallengesForTenant = async (tenant_id) => {
   return await db.all(
     `SELECT c.*, u.username as admin_username,
       (SELECT COUNT(*) FROM challenge_participants cp WHERE cp.challenge_id = c.id) as participant_count
     FROM challenges c
-    JOIN challenge_invites ci ON ci.challenge_id = c.id AND ci.household_id = ?
     LEFT JOIN users u ON c.admin_user_id = u.id
+    WHERE c.tenant_id = ?
     ORDER BY c.created_at DESC`,
-    [household_id]
+    [tenant_id]
   );
 };
 
-const getChallengeByInviteToken = async (token) => {
-  return await db.get("SELECT * FROM challenges WHERE invite_token = ?", [token]);
+const challengeInTenant = async (challenge_id, tenant_id) => {
+  return await db.get("SELECT 1 FROM challenges WHERE id = ? AND tenant_id = ?", [challenge_id, tenant_id]);
 };
 
-const householdInvited = async (challenge_id, household_id) => {
+// An activity is visible to the tenant that owns its challenge.
+const activityInTenant = async (activity_id, tenant_id) => {
   return await db.get(
-    "SELECT 1 FROM challenge_invites WHERE challenge_id = ? AND household_id = ?",
-    [challenge_id, household_id]
-  );
-};
-
-const getChallengeInvites = async (challenge_id) => {
-  return await db.all(
-    `SELECT h.id, h.name, h.code FROM challenge_invites ci
-    JOIN households h ON ci.household_id = h.id
-    WHERE ci.challenge_id = ?
-    ORDER BY h.name`,
-    [challenge_id]
-  );
-};
-
-const addChallengeInvite = async (challenge_id, household_id) => {
-  await db.run(
-    "INSERT INTO challenge_invites (challenge_id, household_id) VALUES (?, ?) ON CONFLICT (challenge_id, household_id) DO NOTHING",
-    [challenge_id, household_id]
-  );
-};
-
-const removeChallengeInvite = async (challenge_id, household_id) => {
-  await db.run(
-    "DELETE FROM challenge_invites WHERE challenge_id = ? AND household_id = ?",
-    [challenge_id, household_id]
+    `SELECT 1 FROM activities a
+    JOIN challenges c ON a.challenge_id = c.id
+    WHERE a.id = ? AND c.tenant_id = ?`,
+    [activity_id, tenant_id]
   );
 };
 
@@ -128,14 +99,10 @@ const runMigration = async (migration) => {
   await sql.unsafe(migration);
 };
 
-const deleteUser = async (id) => {
-  await db.run("DELETE FROM users WHERE id = ?", [id]);
-};
-
-const addActivity = async (user_id, duration, date, memo = "", photo_path = null, challenge_id = 1, lat = null, lng = null, is_boosted = false) => {
+const addActivity = async (user_id, duration, date, memo = "", photo_path = null, challenge_id, lat = null, lng = null) => {
   const result = await db.run(
-    "INSERT INTO activities (user_id, duration, memo, date, photo_path, challenge_id, lat, lng, is_boosted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
-    [user_id, duration, memo, date, photo_path, challenge_id, lat, lng, !!is_boosted]
+    "INSERT INTO activities (user_id, duration, memo, date, photo_path, challenge_id, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+    [user_id, duration, memo, date, photo_path, challenge_id, lat, lng]
   );
   return await db.get("SELECT * FROM activities WHERE id = ?", [result.lastID]);
 };
@@ -156,18 +123,6 @@ const deleteActivity = async (id) => {
   await db.run("DELETE FROM activities WHERE id = ?", [id]);
 };
 
-const listActivities = async () => {
-  return await db.all(
-    "SELECT a.*, u.username FROM activities a JOIN users u ON a.user_id = u.id ORDER BY a.date DESC"
-  );
-};
-
-const listUsersByDuration = async () => {
-  return await db.all(
-    "SELECT users.username, SUM(activities.duration) as total_duration FROM users JOIN activities ON users.id = activities.user_id GROUP BY users.id, users.username ORDER BY users.username DESC"
-  );
-};
-
 const getChallenge = async (id) => {
   return await db.get(
     `SELECT c.*, u.username as admin_username
@@ -178,11 +133,10 @@ const getChallenge = async (id) => {
   );
 };
 
-const createChallenge = async (name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path = null) => {
-  const invite_token = crypto.randomBytes(16).toString("hex");
+const createChallenge = async (tenant_id, name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path = null, unit = "minutes") => {
   const result = await db.run(
-    "INSERT INTO challenges (name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path, invite_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
-    [name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path, invite_token]
+    "INSERT INTO challenges (tenant_id, name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+    [tenant_id, name, description ?? null, goal_minutes, start_date ?? null, end_date ?? null, admin_user_id, photo_path, unit]
   );
   await db.run(
     "INSERT INTO challenge_participants (challenge_id, user_id) VALUES (?, ?) ON CONFLICT (challenge_id, user_id) DO NOTHING",
@@ -204,30 +158,6 @@ const updateChallenge = async (id, name, description, goal_minutes, start_date, 
     );
   }
   return await getChallenge(id);
-};
-
-const getChallengeParticipants = async (challenge_id) => {
-  return await db.all(
-    `SELECT u.* FROM challenge_participants cp
-    JOIN users u ON cp.user_id = u.id
-    WHERE cp.challenge_id = ?
-    ORDER BY u.username`,
-    [challenge_id]
-  );
-};
-
-const addChallengeParticipant = async (challenge_id, user_id) => {
-  await db.run(
-    "INSERT INTO challenge_participants (challenge_id, user_id) VALUES (?, ?) ON CONFLICT (challenge_id, user_id) DO NOTHING",
-    [challenge_id, user_id]
-  );
-};
-
-const removeChallengeParticipant = async (challenge_id, user_id) => {
-  await db.run(
-    "DELETE FROM challenge_participants WHERE challenge_id = ? AND user_id = ?",
-    [challenge_id, user_id]
-  );
 };
 
 const getChallengeActivities = async (challenge_id) => {
@@ -254,19 +184,6 @@ const getChallengeActivities = async (challenge_id) => {
   return activities.map((a) => ({ ...a, comments: commentsByActivity[a.id] || [] }));
 };
 
-const getChallengeDuration = async (challenge_id) => {
-  return await db.all(
-    `SELECT u.id, u.username, COALESCE(SUM(a.duration), 0) as total_duration
-    FROM challenge_participants cp
-    JOIN users u ON cp.user_id = u.id
-    LEFT JOIN activities a ON a.user_id = u.id AND a.challenge_id = ? AND a.is_archived = FALSE
-    WHERE cp.challenge_id = ?
-    GROUP BY u.id, u.username
-    ORDER BY total_duration DESC`,
-    [challenge_id, challenge_id]
-  );
-};
-
 const getPrizes = async (challenge_id) => {
   return await db.all(
     `SELECT p.*, u.username, w.username as winner_username FROM prizes p
@@ -285,7 +202,7 @@ const getUserPrizeForChallenge = async (challenge_id, user_id) => {
 const addPrize = async (challenge_id, name, description, user_id) => {
   const result = await db.run(
     "INSERT INTO prizes (challenge_id, name, description, user_id) VALUES (?, ?, ?, ?) RETURNING id",
-    [challenge_id, name, description, user_id]
+    [challenge_id, name, description ?? null, user_id]
   );
   return await db.get(
     `SELECT p.*, u.username FROM prizes p
@@ -295,22 +212,53 @@ const addPrize = async (challenge_id, name, description, user_id) => {
   );
 };
 
-const updatePrize = async (id, name, description) => {
-  await db.run("UPDATE prizes SET name = ?, description = ? WHERE id = ?", [name, description, id]);
+const updatePrize = async (challenge_id, id, name, description) => {
+  await db.run("UPDATE prizes SET name = ?, description = ? WHERE id = ? AND challenge_id = ?", [name, description ?? null, id, challenge_id]);
   return await db.get(
-    `SELECT p.*, u.username FROM prizes p LEFT JOIN users u ON p.user_id = u.id WHERE p.id = ?`,
-    [id]
+    `SELECT p.*, u.username FROM prizes p LEFT JOIN users u ON p.user_id = u.id WHERE p.id = ? AND p.challenge_id = ?`,
+    [id, challenge_id]
   );
 };
 
-const deletePrize = async (id) => {
-  await db.run("DELETE FROM prizes WHERE id = ?", [id]);
+const getPrizeSuggestions = async (challenge_id) => {
+  return await db.all(
+    `SELECT s.*, u.username FROM prize_suggestions s
+    LEFT JOIN users u ON s.user_id = u.id
+    WHERE s.challenge_id = ?
+    ORDER BY s.created_at ASC`,
+    [challenge_id]
+  );
 };
 
-const claimPrize = async (prizeId, user_id) => {
+const addPrizeSuggestion = async (challenge_id, user_id, text) => {
   const result = await db.run(
-    "UPDATE prizes SET winner_user_id = ? WHERE id = ? AND winner_user_id IS NULL AND (user_id IS NULL OR user_id != ?)",
-    [user_id, prizeId, user_id]
+    "INSERT INTO prize_suggestions (challenge_id, user_id, text) VALUES (?, ?, ?) RETURNING id",
+    [challenge_id, user_id, text]
+  );
+  return await db.get(
+    `SELECT s.*, u.username FROM prize_suggestions s LEFT JOIN users u ON s.user_id = u.id WHERE s.id = ?`,
+    [result.lastID]
+  );
+};
+
+// Only the suggester can remove their own idea.
+const deletePrizeSuggestion = async (challenge_id, id, user_id) => {
+  const result = await db.run(
+    "DELETE FROM prize_suggestions WHERE id = ? AND challenge_id = ? AND user_id = ?",
+    [id, challenge_id, user_id]
+  );
+  return result.changes > 0;
+};
+
+// Picking an idea as your prize uses it up.
+const usePrizeSuggestion = async (challenge_id, id) => {
+  await db.run("DELETE FROM prize_suggestions WHERE id = ? AND challenge_id = ?", [id, challenge_id]);
+};
+
+const claimPrize = async (challenge_id, prizeId, user_id) => {
+  const result = await db.run(
+    "UPDATE prizes SET winner_user_id = ? WHERE id = ? AND challenge_id = ? AND winner_user_id IS NULL AND (user_id IS NULL OR user_id != ?)",
+    [user_id, prizeId, challenge_id, user_id]
   );
   if (result.changes === 0) {
     throw new Error("Prize cannot be claimed");
@@ -321,16 +269,6 @@ const claimPrize = async (prizeId, user_id) => {
     LEFT JOIN users w ON p.winner_user_id = w.id
     WHERE p.id = ?`,
     [prizeId]
-  );
-};
-
-const getActivityComments = async (activity_id) => {
-  return await db.all(
-    `SELECT c.*, u.username FROM activity_comments c
-    LEFT JOIN users u ON c.user_id = u.id
-    WHERE c.activity_id = ?
-    ORDER BY c.created_at ASC`,
-    [activity_id]
   );
 };
 
@@ -348,46 +286,37 @@ const addActivityComment = async (activity_id, user_id, text, lat, lng) => {
 };
 
 module.exports = {
-  getUserById,
-  createHousehold,
-  getHouseholdById,
-  getHouseholdByCode,
-  getHouseholdUsers,
-  addUserToHousehold,
-  userInHousehold,
-  addDevice,
-  getDeviceByTokenHash,
-  touchDevice,
-  deleteDevice,
-  getChallengesForHousehold,
-  getChallengeByInviteToken,
-  householdInvited,
-  getChallengeInvites,
-  addChallengeInvite,
-  removeChallengeInvite,
-  listActivities,
-  listUsersByDuration,
+  createTenant,
+  listTenants,
+  getTenantByName,
+  getTenantById,
+  getTenantBySecretKey,
+  updateTenantSecretKey,
+  getTenantUsers,
+  getTenantUserById,
+  getTenantUserByUsername,
+  addUserToTenant,
+  getChallengesForTenant,
+  challengeInTenant,
+  activityInTenant,
   addActivity,
   updateActivityAddress,
   deleteActivity,
-  deleteUser,
   runMigration,
   incrementSusCount,
   decrementSusCount,
   getChallenge,
   createChallenge,
   updateChallenge,
-  getChallengeParticipants,
-  addChallengeParticipant,
-  removeChallengeParticipant,
   getChallengeActivities,
-  getChallengeDuration,
   getPrizes,
   getUserPrizeForChallenge,
   addPrize,
   updatePrize,
-  deletePrize,
   claimPrize,
-  getActivityComments,
+  getPrizeSuggestions,
+  addPrizeSuggestion,
+  deletePrizeSuggestion,
+  usePrizeSuggestion,
   addActivityComment,
 };

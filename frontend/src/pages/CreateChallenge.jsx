@@ -2,17 +2,20 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useMutation } from "@tanstack/react-query"
 import { apiUrl, apiFetch } from "../api"
-import { useCurrentUser } from "../UserContext"
+import { useCurrentUser, tenantInviteUrl } from "../UserContext"
+import { UNITS } from "../units"
+import { compressImage } from "../compressImage"
 import { useCopyButton } from "../useCopyButton"
 
 const CreateChallenge = () => {
-  const { currentUser } = useCurrentUser()
+  const { currentUser, tenant } = useCurrentUser()
   const navigate = useNavigate()
 
   const [form, setForm] = useState({
     name: "",
     description: "",
     goal_minutes: "",
+    unit: "minutes",
     start_date: "",
     end_date: "",
     prize: ""
@@ -35,7 +38,7 @@ const CreateChallenge = () => {
     onError: () => setError("Failed to create challenge.")
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name) {
       setError("Name is required.")
@@ -46,17 +49,15 @@ const CreateChallenge = () => {
     formData.append("name", form.name)
     formData.append("description", form.description)
     formData.append("goal_minutes", form.goal_minutes)
+    formData.append("unit", form.unit)
     formData.append("start_date", form.start_date || "")
     formData.append("end_date", form.end_date || "")
     formData.append("prize", form.prize || "")
-    formData.append("admin_user_id", currentUser.id)
-    if (photo) formData.append("photo", photo)
+    if (photo) formData.append("photo", await compressImage(photo))
     createChallenge.mutate(formData)
   }
 
-  const inviteUrl = created
-    ? `${window.location.origin}/join/${created.invite_token}`
-    : ""
+  const inviteUrl = tenantInviteUrl(tenant, created?.id)
 
   if (!currentUser) {
     return (
@@ -71,7 +72,7 @@ const CreateChallenge = () => {
       <div className="max-w-md mx-auto px-4">
         <h2 className="text-2xl mb-2">{created.name} created!</h2>
         <p className="text-gray-600 text-sm mb-6">
-          Share the link below to invite others to the challenge.
+          Everyone in {tenant?.name} can see it. Share the link below to invite someone new.
         </p>
 
         <div className="border border-gray-200 rounded-lg p-4 space-y-3">
@@ -141,7 +142,25 @@ const CreateChallenge = () => {
 
         <div>
           <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
-            Goal (minutes)
+            Measure in
+          </label>
+          <div className="flex gap-2">
+            {Object.entries(UNITS).map(([key, u]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, unit: key }))}
+                className={`text-sm rounded px-3 py-1.5 border ${form.unit === key ? "bg-yellow-600 text-white border-yellow-600" : "text-yellow-600 border-yellow-600 hover:bg-yellow-600 hover:text-white"}`}
+              >
+                {u.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
+            Goal ({UNITS[form.unit].label.toLowerCase()})
           </label>
           <input
             type="number"
@@ -151,6 +170,8 @@ const CreateChallenge = () => {
             }
             className="text-base border border-gray-200 rounded px-2 py-1.5 w-32 focus:outline-none focus:border-yellow-400"
             min="0"
+            step={UNITS[form.unit].step}
+            required
           />
         </div>
 

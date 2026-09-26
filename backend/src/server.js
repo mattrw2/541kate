@@ -1,7 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
 const APP_PORT = process.env.APP_PORT || 8000;
 const path = require("path");
 
@@ -23,10 +22,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 const app = express();
-app.use(cookieParser());
 
-// Cookies require an explicit origin allowlist (wildcard is disallowed with
-// credentials). Set CORS_ORIGIN to the frontend origin(s) in production.
+// Explicit origin allowlist (wildcard is disallowed with credentials). Set
+// CORS_ORIGIN to the frontend origin(s) in production.
 const normalizeOrigin = (o) => o.trim().replace(/\/+$/, ""); // tolerate trailing slashes
 const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
   .split(",")
@@ -45,22 +43,29 @@ app.use(
 );
 
 const db = require("./db");
-const { requireDevice, assertUserInHousehold } = require("./middleware/device");
+const { requireUser, isId } = require("./middleware/tenant");
 
-app.post("/activities", upload.single('photo'), requireDevice, async (req, res) => {
+// Activities are logged as the acting user, in a challenge owned by
+// the caller's tenant.
+app.post("/activities", upload.single('photo'), requireUser, async (req, res) => {
 
-  const d = JSON.parse(req.body.data);
-
-  const { user_id, duration, memo, date, challenge_id, lat, lng, is_boosted } = d;
-  const photo_path = req.file ? `/${req.file.filename}` : null;
-  if (!user_id || !duration || !date) {
-      return res.status(400).send("User ID, duration, and date are required.");
+  let d;
+  try {
+      d = JSON.parse(req.body.data);
+  } catch {
+      return res.status(400).send("Activity data is missing or invalid.");
   }
-  if (!(await assertUserInHousehold(user_id, req.householdId))) {
-      return res.status(403).send("That user is not in your household.");
+
+  const { duration, memo, date, challenge_id, lat, lng } = d;
+  const photo_path = req.file ? `/${req.file.filename}` : null;
+  if (!duration || !date || !challenge_id) {
+      return res.status(400).send("Duration, date, and challenge ID are required.");
+  }
+  if (!isId(challenge_id) || !(await db.challengeInTenant(challenge_id, req.tenantId))) {
+      return res.status(404).send("Challenge not found.");
   }
   try {
-      const newActivity = await db.addActivity(user_id, duration, date, memo, photo_path, challenge_id || 1, lat, lng, is_boosted);
+      const newActivity = await db.addActivity(req.userId, duration, date, memo, photo_path, challenge_id, lat, lng);
       return res.json(newActivity);
   } catch (error) {
       console.error(error);
@@ -76,11 +81,11 @@ app.use(express.static(path.join(__dirname, "../database/uploads")));
 const usersRouter = require("./routes/users");
 const activitiesRouter = require("./routes/activities");
 const challengesRouter = require("./routes/challenges");
-const householdsRouter = require("./routes/households");
+const tenantsRouter = require("./routes/tenants");
 app.use("/users", usersRouter);
 app.use("/activities", activitiesRouter);
 app.use("/challenges", challengesRouter);
-app.use("/households", householdsRouter);
+app.use("/tenants", tenantsRouter);
 
 
 /* Add in some basic error handling so our server doesn't crash if we run into

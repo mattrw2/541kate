@@ -1,76 +1,80 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
-import { apiUrl, apiFetch } from "./api"
+import { useQueryClient } from "@tanstack/react-query"
+import { apiUrl, apiFetch, getTenantKey, setTenantKey, getActingUserId, setActingUserId } from "./api"
 
 const UserContext = createContext(null)
 
-// Session state for the whole app:
+// Tenant state for the whole app:
 //  - status: "loading" | "authenticated" | "unauthenticated"
-//  - household / profiles: from the trusted-device cookie (GET /households/me)
-//  - currentUser: the tapped profile (one-tap switch, no lock), remembered locally
+//  - tenant / profiles: from the stored tenant key (GET /tenants/me)
+//  - currentUser: the profile being acted as (any profile in the tenant, one tap
+//    to switch), remembered locally and sent as X-User-Id
 export const UserProvider = ({ children }) => {
-  const [status, setStatus] = useState("loading")
-  const [household, setHousehold] = useState(null)
+  const queryClient = useQueryClient()
+  const [status, setStatus] = useState(getTenantKey() ? "loading" : "unauthenticated")
+  const [tenant, setTenant] = useState(null)
   const [profiles, setProfiles] = useState([])
   const [currentUser, setCurrentUserState] = useState(null)
 
-  const pickStoredProfile = (list) => {
-    const storedId = parseInt(localStorage.getItem("currentProfileId") || "", 10)
-    return list.find((p) => p.id === storedId) || null
-  }
+  const pickStoredProfile = (list) => list.find((p) => p.id === getActingUserId()) || null
 
   const setCurrentUser = useCallback((user) => {
-    if (user) localStorage.setItem("currentProfileId", String(user.id))
-    else localStorage.removeItem("currentProfileId")
+    setActingUserId(user ? user.id : null)
     setCurrentUserState(user)
   }, [])
 
-  // Adopt a session returned by create/join household.
-  const applySession = useCallback(
-    ({ household, profiles, currentUser }) => {
-      setHousehold(household)
-      setProfiles(profiles || [])
+  // Adopt a tenant returned by POST /tenants or /tenants/join.
+  const enterTenant = useCallback(
+    ({ tenant, users, currentUser }) => {
+      if (tenant.secret_key !== getTenantKey()) queryClient.clear()
+      setTenantKey(tenant.secret_key)
+      setTenant(tenant)
+      setProfiles(users || [])
       setStatus("authenticated")
-      if (currentUser) setCurrentUser(currentUser)
-      else setCurrentUserState(pickStoredProfile(profiles || []))
+      setCurrentUser(currentUser || pickStoredProfile(users || []))
     },
-    [setCurrentUser]
+    [queryClient, setCurrentUser]
   )
 
+  // Forget the tenant on this device. Nothing to tell the server.
+  const signOut = useCallback(() => {
+    setTenantKey(null)
+    setActingUserId(null)
+    queryClient.clear()
+    setCurrentUserState(null)
+    setTenant(null)
+    setProfiles([])
+    setStatus("unauthenticated")
+  }, [queryClient])
+
   const refresh = useCallback(async () => {
+    if (!getTenantKey()) {
+      setStatus("unauthenticated")
+      return
+    }
     try {
-      const res = await apiFetch(`${apiUrl}/households/me`)
+      // Don't send X-User-Id here: a stale id (deleted profile) would 403.
+      const res = await apiFetch(`${apiUrl}/tenants/me`, { headers: { "X-User-Id": "" } })
       if (res.status === 401) {
-        setStatus("unauthenticated")
+        // Key is no longer valid.
+        signOut()
         return
       }
-      if (!res.ok) throw new Error("Failed to load household")
+      if (!res.ok) throw new Error("Failed to load tenant")
       const data = await res.json()
-      setHousehold(data.household)
-      setProfiles(data.profiles || [])
+      setTenant(data.tenant)
+      setProfiles(data.users || [])
       setStatus("authenticated")
+      const list = data.users || []
       setCurrentUserState((prev) => {
-        const list = data.profiles || []
-        if (prev && list.find((p) => p.id === prev.id)) return prev
-        return pickStoredProfile(list)
+        const next = (prev && list.find((p) => p.id === prev.id)) || pickStoredProfile(list)
+        if (!next) setActingUserId(null)
+        return next
       })
     } catch (e) {
       setStatus("unauthenticated")
     }
-  }, [])
-
-  // Untrust this device: clear the cookie server-side and reset local state.
-  const signOut = useCallback(async () => {
-    try {
-      await apiFetch(`${apiUrl}/households/signout`, { method: "POST" })
-    } catch (e) {
-      // Even if the request fails, drop local state so the UI returns to setup.
-    }
-    localStorage.removeItem("currentProfileId")
-    setCurrentUserState(null)
-    setHousehold(null)
-    setProfiles([])
-    setStatus("unauthenticated")
-  }, [])
+  }, [signOut])
 
   useEffect(() => {
     refresh()
@@ -78,7 +82,7 @@ export const UserProvider = ({ children }) => {
 
   return (
     <UserContext.Provider
-      value={{ status, household, profiles, currentUser, setCurrentUser, applySession, refresh, signOut }}
+      value={{ status, tenant, profiles, currentUser, setCurrentUser, enterTenant, refresh, signOut }}
     >
       {children}
     </UserContext.Provider>
@@ -86,3 +90,11 @@ export const UserProvider = ({ children }) => {
 }
 
 export const useCurrentUser = () => useContext(UserContext)
+
+// Shareable link that lets someone join the current tenant. With a challengeId,
+// the invite screen names that challenge and joining lands on it.
+export const tenantInviteUrl = (tenant, challengeId) => {
+  if (!tenant?.secret_key) return ""
+  const url = `${window.location.origin}/join/${tenant.secret_key}`
+  return challengeId ? `${url}?challenge=${challengeId}` : url
+}

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Link } from "react-router-dom"
 import { apiUrl, apiFetch } from "../api"
 import { useCurrentUser } from "../UserContext"
+import { unitOf, formatAmount } from "../units"
 
 const Challenges = () => {
   const { currentUser } = useCurrentUser()
@@ -44,7 +45,7 @@ const Challenges = () => {
         <div className="max-w-md mx-auto px-4 py-16 text-center">
           <h2 className="text-xl font-semibold text-gray-800 mb-2">No challenges yet</h2>
           <p className="text-gray-500 text-sm mb-6">
-            Create one to get started, or open an invite link someone shared with you to join theirs.
+            Create one to get started.
           </p>
           {currentUser && (
             <Link
@@ -78,7 +79,7 @@ const Challenges = () => {
                   {formatDate(challenge.end_date)}
                 </span>
               )}
-              <span>Goal: {challenge.goal_minutes} min</span>
+              <span>Goal: {formatAmount(challenge.goal_minutes, unitOf(challenge))}</span>
               {challenge.admin_username && <span>by {challenge.admin_username}</span>}
             </div>
           </li>

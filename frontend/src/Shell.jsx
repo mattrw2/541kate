@@ -1,10 +1,10 @@
 import { Disclosure, Dialog } from "@headlessui/react";
 import { useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useLocation, Link } from "react-router-dom";
-import { useCurrentUser } from "./UserContext";
+import { useCurrentUser, tenantInviteUrl } from "./UserContext";
 import { apiUrl, apiFetch } from "./api";
+import { useCopyButton } from "./useCopyButton";
 
 const navigation = [
   { name: "Take a quiz", href: "/quizzes", pageName: "Quizzes" },
@@ -23,8 +23,9 @@ const Shell = ({ children }) => {
   const [showAddUser, setShowAddUser] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [newUsername, setNewUsername] = useState("");
-  const { status, household, profiles, currentUser, setCurrentUser, refresh, signOut } = useCurrentUser();
-  const queryClient = useQueryClient();
+  const { status, tenant, profiles, currentUser, setCurrentUser, refresh, signOut } = useCurrentUser();
+  const { copied, copy } = useCopyButton();
+
 
   const location = useLocation();
   const currentPath = location.pathname;
@@ -54,7 +55,6 @@ const Shell = ({ children }) => {
     if (!res.ok) return;
     const user = await res.json();
     await refresh();
-    queryClient.invalidateQueries({ queryKey: ["users"] });
     setCurrentUser(user);
     setNewUsername("");
     setShowAddUser(false);
@@ -155,7 +155,7 @@ const Shell = ({ children }) => {
                 if (e.key === "Enter") handleAddUser();
                 if (e.key === "Escape") setShowAddUser(false);
               }}
-              placeholder="Your name"
+              placeholder="Your username"
               className="text-base border rounded px-2 py-1 w-full mb-4"
             />
             <div className="flex justify-end gap-2">
@@ -176,27 +176,33 @@ const Shell = ({ children }) => {
         </div>
       </Dialog>
 
-      {/* Household settings modal */}
+      {/* Tenant settings modal */}
       <Dialog open={showSettings} onClose={() => setShowSettings(false)} className="relative z-50">
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="bg-white rounded-xl shadow-xl w-full max-w-xs p-6">
             <div className="flex justify-between items-center mb-4">
-              <Dialog.Title className="text-lg font-light text-gray-800">{household?.name}</Dialog.Title>
+              <Dialog.Title className="text-lg font-light text-gray-800">{tenant?.name}</Dialog.Title>
               <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
             </div>
-            <p className="text-sm text-gray-500 mb-2">Household code</p>
+            <p className="text-sm text-gray-500 mb-2">Shared password</p>
             <div className="text-2xl font-mono font-bold tracking-widest text-gray-800 bg-yellow-50 border-2 border-yellow-300 rounded-lg py-3 text-center select-all">
-              {household?.code}
+              {tenant?.secret_key}
             </div>
             <p className="text-xs text-gray-400 mt-3">
-              To add another device, open 541Kate.com, choose “Join with code”, and enter this code.
+              Anyone with this password can join and act as anyone here. Share it, or send the invite link:
             </p>
             <button
-              onClick={async () => { setShowSettings(false); await signOut(); }}
+              onClick={() => copy(tenantInviteUrl(tenant))}
+              className="mt-2 w-full text-sm bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg py-2"
+            >
+              {copied ? "Copied!" : "Copy invite link"}
+            </button>
+            <button
+              onClick={() => { setShowSettings(false); signOut(); }}
               className="mt-5 w-full text-sm text-red-500 hover:text-white hover:bg-red-500 border border-red-300 rounded-lg py-2"
             >
-              Forget this device
+              Sign out
             </button>
           </Dialog.Panel>
         </div>

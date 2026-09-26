@@ -5,18 +5,23 @@ import app from "../src/server.js"
 // These exercise the request pipeline (routing + middleware) on paths that
 // return before any DB query runs, so they need no Postgres.
 
-describe("device auth gating", () => {
-  it("GET /challenges without a device cookie → 401", async () => {
+describe("tenant key gating", () => {
+  it("GET /challenges without a tenant key → 401", async () => {
     const res = await request(app).get("/challenges")
     expect(res.status).toBe(401)
   })
 
-  it("GET /users without a device cookie → 401", async () => {
-    const res = await request(app).get("/users")
+  it("POST /users without a tenant key → 401", async () => {
+    const res = await request(app).post("/users").send({ username: "kate" })
     expect(res.status).toBe(401)
   })
 
-  it("POST /activities without a device cookie → 401", async () => {
+  it("POST /activities without a tenant key → 401 (before parsing data)", async () => {
+    const res = await request(app).post("/activities").field("data", "not json")
+    expect(res.status).toBe(401)
+  })
+
+  it("POST /activities without a tenant key → 401", async () => {
     const res = await request(app)
       .post("/activities")
       .field("data", JSON.stringify({ user_id: 1, duration: 30, date: "2026-01-01" }))
@@ -25,13 +30,33 @@ describe("device auth gating", () => {
 })
 
 describe("request validation", () => {
-  it("POST /households without a username → 400", async () => {
-    const res = await request(app).post("/households").send({})
+  it("POST /tenants without a username → 400", async () => {
+    const res = await request(app).post("/tenants").send({})
     expect(res.status).toBe(400)
   })
 
-  it("POST /households/join without a code → 400", async () => {
-    const res = await request(app).post("/households/join").send({})
+  it("POST /tenants without a tenantName → 400", async () => {
+    const res = await request(app).post("/tenants").send({ username: "kate" })
     expect(res.status).toBe(400)
+  })
+
+  it("POST /tenants/join with a tenant_id but no key → 400", async () => {
+    const res = await request(app).post("/tenants/join").send({ tenant_id: 1 })
+    expect(res.status).toBe(400)
+  })
+
+  it("POST /tenants/join without a key → 400", async () => {
+    const res = await request(app).post("/tenants/join").send({})
+    expect(res.status).toBe(400)
+  })
+
+  it("PUT /tenants/password without a tenant key → 401", async () => {
+    const res = await request(app).put("/tenants/password").send({ password: "NEWPASS" })
+    expect(res.status).toBe(401)
+  })
+
+  it("GET /tenants/me without a tenant key → 401", async () => {
+    const res = await request(app).get("/tenants/me")
+    expect(res.status).toBe(401)
   })
 })
