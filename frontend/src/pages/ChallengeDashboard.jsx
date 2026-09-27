@@ -360,6 +360,12 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
   const [prizeForm, setPrizeForm] = useState({ name: "", description: "" })
   const [ideaText, setIdeaText] = useState("")
   const [showIdeaForm, setShowIdeaForm] = useState(false)
+  const [editingIdeaId, setEditingIdeaId] = useState(null) // set when the suggestion modal is editing
+  const openIdeaForm = (suggestion = null) => {
+    setEditingIdeaId(suggestion?.id ?? null)
+    setIdeaText(suggestion?.text ?? "")
+    setShowIdeaForm(true)
+  }
   const [editingPrize, setEditingPrize] = useState(null)
   const [showManage, setShowManage] = useState(false)
   const [showShare, setShowShare] = useState(false)
@@ -459,10 +465,12 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
     },
   })
 
+  // Adds a suggestion, or saves an edit to your own when editingIdeaId is set.
   const addIdea = useMutation({
     mutationFn: async (text) => {
-      const r = await apiFetch(`${apiUrl}/challenges/${id}/prize-suggestions`, {
-        method: "POST",
+      const path = editingIdeaId ? `/prize-suggestions/${editingIdeaId}` : "/prize-suggestions"
+      const r = await apiFetch(`${apiUrl}/challenges/${id}${path}`, {
+        method: editingIdeaId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       })
@@ -472,6 +480,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id, "prize-suggestions"] })
       setIdeaText("")
+      setEditingIdeaId(null)
       setShowIdeaForm(false)
     },
   })
@@ -836,7 +845,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                     <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Prize suggestions</h3>
                     {currentUser && (
                       <button
-                        onClick={() => setShowIdeaForm(true)}
+                        onClick={() => openIdeaForm()}
                         className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium flex items-center gap-1.5"
                       >
                         <LightBulbIcon className="w-4 h-4" />
@@ -849,24 +858,28 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                   <ul className="space-y-3 mb-3">
                     {prizeIdeas.map((s) => (
                       <li key={s.id} className="flex items-start justify-between text-sm border border-yellow-300 bg-yellow-50 rounded-lg px-3 py-2.5">
-                        <span className="text-gray-800 whitespace-pre-wrap">
-                          {s.text}
-                          {s.username && <span className="block text-xs text-gray-400 mt-0.5">suggested by <span className="text-orange-500">{s.username}</span></span>}
-                        </span>
-                        <div className="ml-3 flex-shrink-0 flex items-center gap-3">
-                          {currentUser && !prizes.some((p) => p.user_id === currentUser.id) && (
-                            <button
-                              onClick={() => addPrizeMutation.mutate({ name: s.text, description: s.text, suggestion_id: s.id })}
-                              disabled={addPrizeMutation.isPending}
-                              className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1 text-xs font-medium disabled:opacity-50"
-                            >
-                              Offer this prize
-                            </button>
-                          )}
-                          {s.user_id === currentUser?.id && (
-                            <button onClick={() => removeIdea.mutate(s.id)} className="text-gray-400 hover:text-red-500 text-xs" title="Remove">✕</button>
-                          )}
+                        <div className="min-w-0">
+                          <p className="text-gray-800 whitespace-pre-wrap break-words">{s.text}</p>
+                          <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-2">
+                            {s.username && <span className="whitespace-nowrap">suggested by <span className="text-orange-500">{s.username}</span></span>}
+                            {/* Your own suggestion: edit or remove it */}
+                            {s.user_id === currentUser?.id && (
+                              <>
+                                <button onClick={() => openIdeaForm(s)} className="text-gray-500 hover:text-yellow-700 underline">Edit</button>
+                                <button onClick={() => removeIdea.mutate(s.id)} className="text-gray-500 hover:text-red-500 underline">Remove</button>
+                              </>
+                            )}
+                          </p>
                         </div>
+                        {currentUser && !prizes.some((p) => p.user_id === currentUser.id) && (
+                          <button
+                            onClick={() => addPrizeMutation.mutate({ name: s.text, description: s.text, suggestion_id: s.id })}
+                            disabled={addPrizeMutation.isPending}
+                            className="ml-3 flex-shrink-0 bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1 text-xs font-medium disabled:opacity-50"
+                          >
+                            Offer this prize
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -1055,7 +1068,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
             <div className="flex justify-between items-center mb-4">
-              <Dialog.Title className="text-lg font-light text-gray-800">Suggest a Prize</Dialog.Title>
+              <Dialog.Title className="text-lg font-light text-gray-800">{editingIdeaId ? "Edit Suggestion" : "Suggest a Prize"}</Dialog.Title>
               <button onClick={() => setShowIdeaForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
             </div>
             <p className="text-xs text-gray-400 mb-3">Anyone who hasn't added a prize yet can choose it as theirs.</p>
@@ -1064,7 +1077,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
               {addIdea.isError && <p className="text-sm text-red-500">{addIdea.error.message}</p>}
               <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={() => ideaText.trim() && addIdea.mutate(ideaText.trim())} disabled={addIdea.isPending || !ideaText.trim()} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-4 py-1.5 text-sm disabled:opacity-50">
-                  {addIdea.isPending ? "Saving..." : "Suggest"}
+                  {addIdea.isPending ? "Saving..." : editingIdeaId ? "Save" : "Suggest"}
                 </button>
                 <button type="button" onClick={() => setShowIdeaForm(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
               </div>

@@ -216,6 +216,21 @@ router.post("/:id/prize-suggestions", requireUser, async (req, res) => {
   }
 });
 
+// PUT /:id/prize-suggestions/:suggestionId - edit your own suggestion
+router.put("/:id/prize-suggestions/:suggestionId", requireUser, async (req, res) => {
+  const { id, suggestionId } = req.params;
+  const text = (req.body.text || "").trim();
+  if (!text) return res.status(400).send("text is required.");
+  try {
+    const suggestion = isId(suggestionId) && (await db.updatePrizeSuggestion(id, suggestionId, req.userId, text));
+    if (!suggestion) return res.status(404).send("Prize suggestion not found.");
+    return res.json(suggestion);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while updating the prize suggestion.");
+  }
+});
+
 // DELETE /:id/prize-suggestions/:suggestionId - remove your own idea
 router.delete("/:id/prize-suggestions/:suggestionId", requireUser, async (req, res) => {
   const { id, suggestionId } = req.params;

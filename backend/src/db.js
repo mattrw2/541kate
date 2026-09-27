@@ -245,6 +245,19 @@ const addPrizeSuggestion = async (challenge_id, user_id, text) => {
   );
 };
 
+// Only the suggester can edit their own suggestion. Returns it, or undefined.
+const updatePrizeSuggestion = async (challenge_id, id, user_id, text) => {
+  const result = await db.run(
+    "UPDATE prize_suggestions SET text = ? WHERE id = ? AND challenge_id = ? AND user_id = ?",
+    [text, id, challenge_id, user_id]
+  );
+  if (result.changes === 0) return undefined;
+  return await db.get(
+    `SELECT s.*, u.username FROM prize_suggestions s LEFT JOIN users u ON s.user_id = u.id WHERE s.id = ?`,
+    [id]
+  );
+};
+
 // Only the suggester can remove their own idea.
 const deletePrizeSuggestion = async (challenge_id, id, user_id) => {
   const result = await db.run(
@@ -320,6 +333,7 @@ module.exports = {
   claimPrize,
   getPrizeSuggestions,
   addPrizeSuggestion,
+  updatePrizeSuggestion,
   deletePrizeSuggestion,
   usePrizeSuggestion,
   addActivityComment,
