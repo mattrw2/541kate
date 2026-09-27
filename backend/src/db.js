@@ -137,10 +137,10 @@ const getChallenge = async (id) => {
   );
 };
 
-const createChallenge = async (tenant_id, name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path = null, unit = "minutes") => {
+const createChallenge = async (tenant_id, name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path = null, unit = "minutes", focus = null) => {
   const result = await db.run(
-    "INSERT INTO challenges (tenant_id, name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
-    [tenant_id, name, description ?? null, goal_minutes, start_date ?? null, end_date ?? null, admin_user_id, photo_path, unit]
+    "INSERT INTO challenges (tenant_id, name, description, goal_minutes, start_date, end_date, admin_user_id, photo_path, unit, photo_focus_x, photo_focus_y) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+    [tenant_id, name, description ?? null, goal_minutes, start_date ?? null, end_date ?? null, admin_user_id, photo_path, unit, focus?.x ?? null, focus?.y ?? null]
   );
   await db.run(
     "INSERT INTO challenge_participants (challenge_id, user_id) VALUES (?, ?) ON CONFLICT (challenge_id, user_id) DO NOTHING",
@@ -149,7 +149,8 @@ const createChallenge = async (tenant_id, name, description, goal_minutes, start
   return await getChallenge(result.lastID);
 };
 
-const updateChallenge = async (id, name, description, goal_minutes, start_date, end_date, photo_path) => {
+// focus: { x, y } to set the photo focus, null to clear it, undefined to keep it.
+const updateChallenge = async (id, name, description, goal_minutes, start_date, end_date, photo_path, focus) => {
   if (photo_path !== undefined) {
     await db.run(
       "UPDATE challenges SET name = ?, description = ?, goal_minutes = ?, start_date = ?, end_date = ?, photo_path = ? WHERE id = ?",
@@ -160,6 +161,9 @@ const updateChallenge = async (id, name, description, goal_minutes, start_date, 
       "UPDATE challenges SET name = ?, description = ?, goal_minutes = ?, start_date = ?, end_date = ? WHERE id = ?",
       [name, description, goal_minutes, start_date, end_date, id]
     );
+  }
+  if (focus !== undefined) {
+    await db.run("UPDATE challenges SET photo_focus_x = ?, photo_focus_y = ? WHERE id = ?", [focus?.x ?? null, focus?.y ?? null, id]);
   }
   return await getChallenge(id);
 };

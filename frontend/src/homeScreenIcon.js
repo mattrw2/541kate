@@ -1,10 +1,9 @@
 import { useEffect } from "react"
-import smartcrop from "smartcrop"
 import { apiUrl } from "./api"
 
 // While a challenge page is open, make "Add to Home Screen" use the challenge:
-// its cover photo (cropped to a square around the subject) as the icon and its
-// name as the label.
+// its cover photo (cropped to a square around the spot the uploader tapped, or
+// the center) as the icon and its name as the label.
 // Phones read these from the page when the icon is added, so we swap them in
 // on mount and restore the site defaults on unmount.
 
@@ -28,19 +27,15 @@ const getMeta = (name) => {
   return el
 }
 
-// Pick the square region of the photo to use. smartcrop favors skin tones and
-// detail, so it usually lands on people's faces rather than background; if it
-// fails, fall back to the center square.
-const pickSquare = async (img) => {
-  const side = Math.min(img.naturalWidth, img.naturalHeight)
-  const center = { x: (img.naturalWidth - side) / 2, y: (img.naturalHeight - side) / 2, width: side, height: side }
-  try {
-    // minScale < 1 lets it zoom in on a subject instead of taking the largest square.
-    const { topCrop } = await smartcrop.crop(img, { width: 180, height: 180, minScale: 0.5 })
-    return topCrop || center
-  } catch {
-    return center
-  }
+// The square region (in pixels) of a W×H photo to use for the icon. With a focus
+// (fractions of width and height), zoom in on it; otherwise take the largest
+// centered square. Also used by PhotoFocusPicker to preview the crop.
+export const focusSquare = (W, H, focus) => {
+  const side = focus ? Math.min(W, H) * 0.6 : Math.min(W, H)
+  const cx = focus ? focus.x * W : W / 2
+  const cy = focus ? focus.y * H : H / 2
+  const clamp = (v, max) => Math.min(Math.max(v, 0), max)
+  return { x: clamp(cx - side / 2, W - side), y: clamp(cy - side / 2, H - side), width: side, height: side }
 }
 
 // Draw the chosen square region as a size×size PNG data URL.
@@ -55,6 +50,8 @@ export const useHomeScreenIcon = (challenge) => {
   const id = challenge?.id
   const name = challenge?.name
   const photoPath = challenge?.photo_path
+  const focusX = challenge?.photo_focus_x
+  const focusY = challenge?.photo_focus_y
 
   useEffect(() => {
     if (!id) return
@@ -72,9 +69,9 @@ export const useHomeScreenIcon = (challenge) => {
       // The photo is served by the backend (another origin); it sends CORS
       // headers, which lets us read it back out of the canvas.
       img.crossOrigin = "anonymous"
-      img.onload = async () => {
-        const crop = await pickSquare(img)
+      img.onload = () => {
         if (cancelled) return
+        const crop = focusSquare(img.naturalWidth, img.naturalHeight, focusX != null ? { x: focusX, y: focusY } : null)
         try {
           icon.href = squareIcon(img, crop, 180)
           // Android reads the web app manifest instead.
@@ -93,7 +90,9 @@ export const useHomeScreenIcon = (challenge) => {
           // Canvas unreadable (e.g. missing CORS headers): keep the default icon.
         }
       }
-      img.src = `${apiUrl}${photoPath}`
+      // Separate URL from the banner's <img>: that one is fetched without CORS,
+      // and reusing its cached copy here would make the canvas unreadable.
+      img.src = `${apiUrl}${photoPath}?icon`
     }
 
     return () => {
@@ -106,5 +105,5 @@ export const useHomeScreenIcon = (challenge) => {
         URL.revokeObjectURL(manifestUrl)
       }
     }
-  }, [id, name, photoPath])
+  }, [id, name, photoPath, focusX, focusY])
 }

@@ -5,6 +5,7 @@ import { apiUrl, apiFetch } from "../api"
 import { useCurrentUser, tenantInviteUrl } from "../UserContext"
 import { UNITS } from "../units"
 import { compressImage } from "../compressImage"
+import { PhotoFocusPicker } from "../PhotoFocusPicker"
 import { useCopyButton } from "../useCopyButton"
 
 const CreateChallenge = () => {
@@ -21,6 +22,7 @@ const CreateChallenge = () => {
     prize: ""
   })
   const [photo, setPhoto] = useState(null)
+  const [photoFocus, setPhotoFocus] = useState(null)
   const [error, setError] = useState(null)
   const [created, setCreated] = useState(null)
   const { copied, copy } = useCopyButton()
@@ -54,6 +56,10 @@ const CreateChallenge = () => {
     formData.append("end_date", form.end_date || "")
     formData.append("prize", form.prize || "")
     if (photo) formData.append("photo", await compressImage(photo))
+    if (photo && photoFocus) {
+      formData.append("photo_focus_x", photoFocus.x)
+      formData.append("photo_focus_y", photoFocus.y)
+    }
     createChallenge.mutate(formData)
   }
 
@@ -222,9 +228,10 @@ const CreateChallenge = () => {
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => setPhoto(e.target.files[0] || null)}
+            onChange={(e) => { setPhoto(e.target.files[0] || null); setPhotoFocus(null) }}
             className="text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:border file:border-gray-200 file:rounded file:text-xs file:text-gray-600 file:bg-white hover:file:bg-gray-50"
           />
+          <PhotoFocusPicker file={photo} focus={photoFocus} onChange={setPhotoFocus} />
         </div>
 
         <button

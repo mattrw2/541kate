@@ -44,6 +44,14 @@ router.get("/", async (req, res) => {
 // since existing activities are recorded in it.
 const UNITS = ["minutes", "miles"];
 
+// Parse the tapped photo focus from form fields; null if absent or invalid.
+const parseFocus = (body) => {
+  const x = parseFloat(body.photo_focus_x);
+  const y = parseFloat(body.photo_focus_y);
+  if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) return null;
+  return { x, y };
+};
+
 // POST / - create a challenge in this tenant, administered by the current user
 router.post("/", requireUser, upload.single("photo"), async (req, res) => {
   const { name, description, goal_minutes, start_date, end_date, prize } = req.body;
@@ -60,7 +68,8 @@ router.post("/", requireUser, upload.single("photo"), async (req, res) => {
   }
   const photo_path = req.file ? `/${req.file.filename}` : null;
   try {
-    const challenge = await db.createChallenge(req.tenantId, name, description, goal_minutes, start_date, end_date, req.userId, photo_path, unit);
+    const focus = photo_path ? parseFocus(req.body) : null;
+    const challenge = await db.createChallenge(req.tenantId, name, description, goal_minutes, start_date, end_date, req.userId, photo_path, unit, focus);
     // Optional prize the creator is putting up.
     if (prize && prize.trim()) {
       await db.addPrize(challenge.id, prize.trim(), null, req.userId);
@@ -92,8 +101,11 @@ router.put("/:id", upload.single("photo"), async (req, res) => {
   const { id } = req.params;
   const { name, description, goal_minutes, start_date, end_date } = req.body;
   const photo_path = req.file ? `/${req.file.filename}` : undefined;
+  // A new photo replaces the focus (null if none tapped); otherwise only update
+  // the focus when one was sent (re-tapping the existing photo).
+  const focus = req.file ? parseFocus(req.body) : parseFocus(req.body) ?? undefined;
   try {
-    const challenge = await db.updateChallenge(id, name, description, goal_minutes, start_date, end_date, photo_path);
+    const challenge = await db.updateChallenge(id, name, description, goal_minutes, start_date, end_date, photo_path, focus);
     return res.json(challenge);
   } catch (error) {
     console.error(error);

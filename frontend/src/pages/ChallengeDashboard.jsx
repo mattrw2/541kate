@@ -18,6 +18,7 @@ import { useCopyButton } from "../useCopyButton"
 import { unitOf, roundAmount, formatAmount } from "../units"
 import { compressImage } from "../compressImage"
 import { useHomeScreenIcon } from "../homeScreenIcon"
+import { PhotoFocusPicker } from "../PhotoFocusPicker"
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, ChartDataLabels)
 
@@ -376,6 +377,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
   const { copied, copy } = useCopyButton()
   const [manageForm, setManageForm] = useState({ name: "", description: "", goal_minutes: 600, start_date: "", end_date: "" })
   const [managePhoto, setManagePhoto] = useState(null)
+  const [manageFocus, setManageFocus] = useState(null)
   const [manageSaveSuccess, setManageSaveSuccess] = useState(false)
 
   useEffect(() => {
@@ -393,6 +395,8 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
         start_date: challenge.start_date || "",
         end_date: challenge.end_date || "",
       })
+      setManagePhoto(null)
+      setManageFocus(challenge.photo_focus_x != null ? { x: challenge.photo_focus_x, y: challenge.photo_focus_y } : null)
     }
   }, [challenge, showManage])
 
@@ -722,7 +726,12 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
             </div>
           </div>
           {challenge.photo_path && (
-            <img src={`${apiUrl}${challenge.photo_path}`} alt={challenge.name} className="w-full h-32 sm:h-48 object-cover rounded-lg mt-2" />
+            <img
+              src={`${apiUrl}${challenge.photo_path}`}
+              alt={challenge.name}
+              className="w-full h-32 sm:h-48 object-cover rounded-lg mt-2"
+              style={challenge.photo_focus_x != null ? { objectPosition: `${challenge.photo_focus_x * 100}% ${challenge.photo_focus_y * 100}%` } : undefined}
+            />
           )}
           {showInfo && (
             <div className="mt-2">
@@ -963,6 +972,10 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                   fd.append("start_date", manageForm.start_date || "")
                   fd.append("end_date", manageForm.end_date || "")
                   if (managePhoto) fd.append("photo", await compressImage(managePhoto))
+                  if (manageFocus) {
+                    fd.append("photo_focus_x", manageFocus.x)
+                    fd.append("photo_focus_y", manageFocus.y)
+                  }
                   updateChallenge.mutate(fd)
                 }}
                 className="space-y-4"
@@ -992,8 +1005,14 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setManagePhoto(e.target.files[0] || null)}
+                    onChange={(e) => { setManagePhoto(e.target.files[0] || null); setManageFocus(null) }}
                     className="text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:border file:border-gray-200 file:rounded file:text-xs file:file:text-gray-600 file:bg-white hover:file:bg-gray-50"
+                  />
+                  <PhotoFocusPicker
+                    file={managePhoto}
+                    url={challenge?.photo_path ? `${apiUrl}${challenge.photo_path}` : null}
+                    focus={manageFocus}
+                    onChange={setManageFocus}
                   />
                 </div>
                 <button type="submit" disabled={updateChallenge.isPending} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-4 py-1.5 text-sm disabled:opacity-50">
