@@ -5,6 +5,7 @@ import { useLocation, Link } from "react-router-dom";
 import { useCurrentUser, tenantInviteUrl } from "./UserContext";
 import { apiUrl, apiFetch } from "./api";
 import { useCopyButton } from "./useCopyButton";
+import { VisibilityChoice } from "./VisibilityChoice";
 
 const navigation = [
   { name: "Take a quiz", href: "/quizzes", pageName: "Quizzes" },
@@ -25,6 +26,22 @@ const Shell = ({ children }) => {
   const [newUsername, setNewUsername] = useState("");
   const { status, tenant, profiles, currentUser, setCurrentUser, refresh, signOut } = useCurrentUser();
   const { copied, copy } = useCopyButton();
+  const [savingVisibility, setSavingVisibility] = useState(false);
+
+  const setVisibility = async (isPublic) => {
+    if (isPublic === tenant?.is_public) return;
+    setSavingVisibility(true);
+    try {
+      const res = await apiFetch(`${apiUrl}/tenants/visibility`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_public: isPublic }),
+      });
+      if (res.ok) await refresh();
+    } finally {
+      setSavingVisibility(false);
+    }
+  };
 
 
   const location = useLocation();
@@ -185,19 +202,27 @@ const Shell = ({ children }) => {
               <Dialog.Title className="text-lg font-light text-gray-800">{tenant?.name}</Dialog.Title>
               <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
             </div>
-            <p className="text-sm text-gray-500 mb-2">Shared password</p>
-            <div className="text-2xl font-mono font-bold tracking-widest text-gray-800 bg-yellow-50 border-2 border-yellow-300 rounded-lg py-3 text-center select-all">
-              {tenant?.secret_key}
-            </div>
-            <p className="text-xs text-gray-400 mt-3">
-              Anyone with this password can join and act as anyone here. Share it, or send the invite link:
-            </p>
+            {/* Public groups are joined without a password, so there's nothing to show. */}
+            {!tenant?.is_public && (
+              <>
+                <p className="text-sm text-gray-500 mb-2">Shared password</p>
+                <div className="text-2xl font-mono font-bold tracking-widest text-gray-800 bg-yellow-50 border-2 border-yellow-300 rounded-lg py-3 text-center select-all">
+                  {tenant?.secret_key}
+                </div>
+                <p className="text-xs text-gray-400 mt-3">
+                  Anyone with this password can join and act as anyone here. Share it, or send the invite link:
+                </p>
+              </>
+            )}
             <button
               onClick={() => copy(tenantInviteUrl(tenant))}
               className="mt-2 w-full text-sm bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg py-2"
             >
               {copied ? "Copied!" : "Copy invite link"}
             </button>
+            <div className="mt-5">
+              <VisibilityChoice isPublic={!!tenant?.is_public} onChange={setVisibility} disabled={savingVisibility} />
+            </div>
             <button
               onClick={() => { setShowSettings(false); signOut(); }}
               className="mt-5 w-full text-sm text-red-500 hover:text-white hover:bg-red-500 border border-red-300 rounded-lg py-2"

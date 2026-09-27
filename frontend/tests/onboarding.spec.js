@@ -6,7 +6,7 @@ import { test, expect } from "@playwright/test"
 test("onboarding screen renders for a new visitor", async ({ page }) => {
   // The join step lists every group; stub it so the snapshot doesn't depend on DB data.
   await page.route("**/tenants", (route) =>
-    route.fulfill({ json: [{ id: 1, name: "541kate" }, { id: 2, name: "Runners" }] })
+    route.fulfill({ json: [{ id: 1, name: "541kate", is_public: false }, { id: 2, name: "Runners", is_public: true }] })
   )
   await page.goto("/challenges")
   await expect(page.getByRole("button", { name: "Join a group" })).toBeVisible()

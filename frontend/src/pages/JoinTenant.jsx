@@ -45,6 +45,10 @@ export const JoinTenantForm = ({ initialKey = "", lockKey = false, challengeId =
     run(async () => setPreview(await postJson("/tenants/join", { key: k.trim(), challenge_id: challengeId, tenant_id: group?.id })))
   }
 
+  // Public groups need no password: look them up by id straight from the list.
+  const joinPublic = (g) =>
+    run(async () => setPreview(await postJson("/tenants/join", { tenant_id: g.id, challenge_id: challengeId })))
+
   useEffect(() => {
     if (lockKey) {
       lookUp(initialKey)
@@ -83,13 +87,16 @@ export const JoinTenantForm = ({ initialKey = "", lockKey = false, challengeId =
           {groups?.map((g) => (
             <button
               key={g.id}
-              onClick={() => { setGroup(g); setKey(""); setError("") }}
-              className="w-full text-left border border-yellow-300 hover:border-yellow-600 hover:bg-yellow-50 rounded-lg px-3 py-2 text-base font-medium text-gray-800"
+              onClick={() => (g.is_public ? joinPublic(g) : (setGroup(g), setKey(""), setError("")))}
+              disabled={busy}
+              className="w-full flex items-center justify-between text-left border border-yellow-300 hover:border-yellow-600 hover:bg-yellow-50 rounded-lg px-3 py-2 text-base font-medium text-gray-800 disabled:opacity-50"
             >
               {g.name}
+              {!g.is_public && <span className="text-xs font-normal text-gray-400">Private</span>}
             </button>
           ))}
         </div>
+        {error && <p className="text-sm text-red-500">{error}</p>}
       </div>
     )
   }

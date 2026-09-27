@@ -5,6 +5,7 @@ import { useCurrentUser } from "../UserContext"
 import { JoinTenantForm } from "./JoinTenant"
 import kateFace from "../kate-face.jpg"
 import { useCopyButton } from "../useCopyButton"
+import { VisibilityChoice } from "../VisibilityChoice"
 
 // Shown right after starting a group: the generated shared password, which they
 // can change to something memorable before continuing.
@@ -79,6 +80,7 @@ const Onboarding = () => {
   const goToChallenges = () => navigate("/challenges", { replace: true })
   const [username, setUsername] = useState("")
   const [tenantName, setTenantName] = useState("")
+  const [isPublic, setIsPublic] = useState(false)
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   const [created, setCreated] = useState(null)
@@ -97,7 +99,14 @@ const Onboarding = () => {
       // Remember the group right away so a reload during the next step doesn't lose it.
       setTenantKey(result.tenant.secret_key)
       setActingUserId(result.currentUser.id)
-      setCreated(result)
+      // Public groups are joined from the list without a password, so there's
+      // nothing to save: go straight in. Private groups show the password step.
+      if (result.tenant.is_public) {
+        enterTenant(result)
+        goToChallenges()
+      } else {
+        setCreated(result)
+      }
     } catch (e) {
       setError(e.message || "Something went wrong")
     } finally {
@@ -110,7 +119,7 @@ const Onboarding = () => {
       setError("Enter a username and a group name.")
       return
     }
-    post("/tenants", { username: username.trim(), tenantName: tenantName.trim() })
+    post("/tenants", { username: username.trim(), tenantName: tenantName.trim(), is_public: isPublic })
   }
 
   const tabClass = (active) =>
@@ -164,15 +173,16 @@ const Onboarding = () => {
                   placeholder="Group name"
                   className="text-base border rounded-lg px-3 py-2 w-full"
                 />
-                <p className="text-xs text-gray-400 -mt-1">
-                  You'll get a shared password so others can join.
-                </p>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Visibility</p>
+                  <VisibilityChoice isPublic={isPublic} onChange={setIsPublic} />
+                </div>
                 <button
                   onClick={submitCreate}
                   disabled={busy}
                   className="w-full bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 text-white font-medium py-2 rounded-lg"
                 >
-                  {busy ? "Creating…" : "Get started"}
+                  {busy ? "Creating…" : "Create group"}
                 </button>
               </div>
             ) : (

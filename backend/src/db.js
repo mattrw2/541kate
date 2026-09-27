@@ -21,13 +21,16 @@ const db = {
 
 // --- Tenants ---
 
-const createTenant = async (name, secret_key) => {
-  const result = await db.run("INSERT INTO tenants (name, secret_key) VALUES (?, ?) RETURNING id", [name, secret_key]);
+const createTenant = async (name, secret_key, is_public = false) => {
+  const result = await db.run(
+    "INSERT INTO tenants (name, secret_key, is_public) VALUES (?, ?, ?) RETURNING id",
+    [name, secret_key, is_public]
+  );
   return await db.get("SELECT * FROM tenants WHERE id = ?", [result.lastID]);
 };
 
 const listTenants = async () => {
-  return await db.all("SELECT id, name FROM tenants ORDER BY LOWER(name)");
+  return await db.all("SELECT id, name, is_public FROM tenants ORDER BY LOWER(name)");
 };
 
 const getTenantByName = async (name) => {
@@ -40,6 +43,11 @@ const getTenantById = async (id) => {
 
 const getTenantBySecretKey = async (secret_key) => {
   return await db.get("SELECT * FROM tenants WHERE secret_key = ?", [secret_key]);
+};
+
+const updateTenantVisibility = async (id, is_public) => {
+  await db.run("UPDATE tenants SET is_public = ? WHERE id = ?", [is_public, id]);
+  return await getTenantById(id);
 };
 
 const updateTenantSecretKey = async (id, secret_key) => {
@@ -288,6 +296,7 @@ module.exports = {
   getTenantById,
   getTenantBySecretKey,
   updateTenantSecretKey,
+  updateTenantVisibility,
   getTenantUsers,
   getTenantUserById,
   getTenantUserByUsername,

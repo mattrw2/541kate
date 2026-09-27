@@ -40,9 +40,9 @@ describe("request validation", () => {
     expect(res.status).toBe(400)
   })
 
-  it("POST /tenants/join with a tenant_id but no key → 400", async () => {
-    const res = await request(app).post("/tenants/join").send({ tenant_id: 1 })
-    expect(res.status).toBe(400)
+  it("POST /tenants/join with an invalid tenant_id → 404", async () => {
+    const res = await request(app).post("/tenants/join").send({ tenant_id: "abc" })
+    expect(res.status).toBe(404)
   })
 
   it("POST /tenants/join without a key → 400", async () => {
@@ -52,6 +52,11 @@ describe("request validation", () => {
 
   it("PUT /tenants/password without a tenant key → 401", async () => {
     const res = await request(app).put("/tenants/password").send({ password: "NEWPASS" })
+    expect(res.status).toBe(401)
+  })
+
+  it("PUT /tenants/visibility without a tenant key → 401", async () => {
+    const res = await request(app).put("/tenants/visibility").send({ is_public: false })
     expect(res.status).toBe(401)
   })
 

@@ -29,7 +29,8 @@ const tenantState = async (tenantId, userId) => {
   return { tenant, users, currentUser };
 };
 
-// GET /tenants - every group's id and name (no passwords), for the join picker
+// GET /tenants - every group's id, name and whether it's public (no passwords),
+// for the join picker
 router.get("/", async (req, res) => {
   try {
     return res.json(await db.listTenants());
@@ -51,8 +52,10 @@ router.get("/me", requireTenant, async (req, res) => {
 
 // POST /tenants - create a tenant with a first user. Users are per-tenant, so this
 // is always a brand-new user. The response carries the secret key to send from now on.
+// is_public (default false) lets people join from the group list without the password.
 router.post("/", async (req, res) => {
   const { tenantName, username } = req.body;
+  const isPublic = req.body.is_public === true;
   if (!username || !username.trim()) {
     return res.status(400).send("username is required.");
   }
@@ -64,7 +67,7 @@ router.post("/", async (req, res) => {
     if (await db.getTenantByName(tenantName.trim())) {
       return res.status(409).send("A group with that name already exists.");
     }
-    const tenant = await db.createTenant(tenantName.trim(), await uniqueKey());
+    const tenant = await db.createTenant(tenantName.trim(), await uniqueKey(), isPublic);
     const user = await db.addUserToTenant(tenant.id, username.trim());
     return res.json(await tenantState(tenant.id, user.id));
   } catch (error) {
@@ -73,24 +76,33 @@ router.post("/", async (req, res) => {
   }
 });
 
-// POST /tenants/join - look up a tenant by its secret key. With a username, that
-// user is returned as currentUser (created if it doesn't exist yet); without one,
-// the client picks any of the returned users to act as. With a challenge_id (from a
-// challenge's invite link), that challenge's id and name are included if it
-// belongs to the tenant. With a tenant_id (picked from the group list), the key
-// must be that group's.
+// POST /tenants/join - find a tenant to join, either by tenant_id (picked from the
+// group list; private groups also need their key) or by key alone (invite links).
+// The response includes the tenant's secret key to send from then on. With a
+// username, that user is returned as currentUser (created if it doesn't exist
+// yet); without one, the client picks any of the returned users to act as. With a
+// challenge_id (from a challenge's invite link), that challenge's id and name are
+// included if it belongs to the tenant.
 router.post("/join", async (req, res) => {
   const { key, username, challenge_id, tenant_id } = req.body;
-  if (!key) {
+  const picked = tenant_id != null && tenant_id !== "";
+  if (!picked && !key) {
     return res.status(400).send("key is required.");
   }
+  if (picked && !isId(tenant_id)) {
+    return res.status(404).send("Group not found.");
+  }
   try {
-    const tenant = await db.getTenantBySecretKey(normalizeKey(key));
-    if (tenant_id != null && tenant_id !== "" && (!tenant || String(tenant.id) !== String(tenant_id))) {
-      return res.status(401).send("That's not the password for this group.");
-    }
-    if (!tenant) {
-      return res.status(404).send("No group found with that shared password.");
+    let tenant;
+    if (picked) {
+      tenant = await db.getTenantById(tenant_id);
+      if (!tenant) return res.status(404).send("Group not found.");
+      if (!tenant.is_public && normalizeKey(key || "") !== tenant.secret_key) {
+        return res.status(401).send(key ? "That's not the password for this group." : "This group needs its shared password.");
+      }
+    } else {
+      tenant = await db.getTenantBySecretKey(normalizeKey(key));
+      if (!tenant) return res.status(404).send("No group found with that shared password.");
     }
     let userId = null;
     if (username && username.trim()) {
@@ -134,6 +146,21 @@ router.put("/password", requireTenant, async (req, res) => {
     if (error.code === "23505") return res.status(409).send("That password is taken. Pick another.");
     console.error(error);
     res.status(500).send("An error occurred while changing the password.");
+  }
+});
+
+// PUT /tenants/visibility - make the group public (join from the list) or private
+// (password needed)
+router.put("/visibility", requireTenant, async (req, res) => {
+  if (typeof req.body.is_public !== "boolean") {
+    return res.status(400).send("is_public must be true or false.");
+  }
+  try {
+    const tenant = await db.updateTenantVisibility(req.tenantId, req.body.is_public);
+    return res.json({ tenant });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while changing the group's visibility.");
   }
 });
 

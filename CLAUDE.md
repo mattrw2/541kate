@@ -49,7 +49,7 @@ Full-stack app: React SPA + Express/Postgres backend. Auto-deploys to AWS Amplif
 **Database:** Postgres, connection string in `DATABASE_URL`. Schema is managed by migration files; **run `npm run migrate` after pulling schema changes, before starting the server**. SSL is auto-enabled when the URL points at Render/Supabase/Neon/AWS. Photo uploads stored in `backend/database/uploads/` (Render persistent disk) and served as static files.
 
 **Key schema:**
-- `tenants` — `id`, `name`, `secret_key` (unique; shared by all the tenant's users, used to invite others)
+- `tenants` — `id`, `name` (unique, case-insensitive), `secret_key` (unique; shared by all the tenant's users, used to invite others), `is_public` (public groups can be joined from the group list without the password; private ones need it)
 - `users` — `id`, `tenant_id` (FK), `username` (unique per tenant)
 - `challenges` — belong to one tenant via `tenant_id`; `unit` is `minutes` or `miles` (set at creation). `goal_minutes` and `activities.duration` keep their names but hold amounts in the challenge's unit (decimals allowed). Frontend unit labels/formatting live in `frontend/src/units.js`.
 - `activities` — `id`, `user_id` (FK), `duration`, `memo`, `date`, `photo_path`, `is_archived`, `is_boosted`, `sus_count`, `lat`, `lng`, `address`, `challenge_id`
