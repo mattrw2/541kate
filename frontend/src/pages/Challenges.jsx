@@ -23,6 +23,50 @@ const Challenges = () => {
 
   const isEmpty = !isPending && challenges.length === 0
 
+  // Same rule as the dashboard: a challenge is over once its end date has passed.
+  // Upcoming ones haven't reached their start date yet; everything else is active.
+  const today = new Date().toLocaleDateString("en-CA")
+  const isPast = (c) => !!(c.end_date && today > c.end_date)
+  const isUpcoming = (c) => !isPast(c) && !!(c.start_date && today < c.start_date)
+  const active = challenges.filter((c) => !isPast(c) && !isUpcoming(c))
+  const upcoming = challenges.filter(isUpcoming).sort((a, b) => a.start_date.localeCompare(b.start_date))
+  const past = challenges.filter(isPast).sort((a, b) => b.end_date.localeCompare(a.end_date))
+
+  const renderChallenge = (challenge) => (
+    <li key={challenge.id} className={`border border-gray-200 rounded-lg p-4 ${isPast(challenge) ? "opacity-75" : ""}`}>
+      <div className="flex justify-between items-start">
+        <Link
+          to={`/challenge/${challenge.id}`}
+          className="text-lg font-semibold text-yellow-700 hover:underline"
+        >
+          {challenge.name}
+        </Link>
+      </div>
+      {challenge.description && (
+        <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{challenge.description}</p>
+      )}
+      <div className="mt-2 text-xs text-gray-700 flex gap-4 flex-wrap">
+        {(challenge.start_date || challenge.end_date) && (
+          <span>
+            {formatDate(challenge.start_date)}
+            {challenge.start_date && challenge.end_date ? " – " : ""}
+            {formatDate(challenge.end_date)}
+          </span>
+        )}
+        <span>Goal: {formatAmount(challenge.goal_minutes, unitOf(challenge))}</span>
+        {challenge.admin_username && <span>by {challenge.admin_username}</span>}
+      </div>
+    </li>
+  )
+
+  const section = (title, list) =>
+    list.length > 0 && (
+      <section className="mb-8">
+        <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3">{title}</h3>
+        <ul className="space-y-3">{list.map(renderChallenge)}</ul>
+      </section>
+    )
+
   return (
     <div className="max-w-3xl mx-auto px-4">
       {!isEmpty && (
@@ -57,34 +101,11 @@ const Challenges = () => {
           )}
         </div>
       ) : (
-      <ul className="space-y-3">
-        {challenges.map((challenge) => (
-          <li key={challenge.id} className="border border-gray-200 rounded-lg p-4">
-            <div className="flex justify-between items-start">
-              <Link
-                to={`/challenge/${challenge.id}`}
-                className="text-lg font-semibold text-yellow-700 hover:underline"
-              >
-                {challenge.name}
-              </Link>
-            </div>
-            {challenge.description && (
-              <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{challenge.description}</p>
-            )}
-            <div className="mt-2 text-xs text-gray-700 flex gap-4 flex-wrap">
-              {(challenge.start_date || challenge.end_date) && (
-                <span>
-                  {formatDate(challenge.start_date)}
-                  {challenge.start_date && challenge.end_date ? " – " : ""}
-                  {formatDate(challenge.end_date)}
-                </span>
-              )}
-              <span>Goal: {formatAmount(challenge.goal_minutes, unitOf(challenge))}</span>
-              {challenge.admin_username && <span>by {challenge.admin_username}</span>}
-            </div>
-          </li>
-        ))}
-      </ul>
+      <>
+        {section("Active", active)}
+        {section("Upcoming", upcoming)}
+        {section("Past", past)}
+      </>
       )}
     </div>
   )
