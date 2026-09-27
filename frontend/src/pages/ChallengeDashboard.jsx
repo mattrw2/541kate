@@ -844,7 +844,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                       </button>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 mb-3">Haven't added a prize yet? Choose one of these as yours.</p>
+                  <p className="text-xs text-gray-400 mb-3">Haven't added a prize yet? Offer one of these as yours.</p>
                   {prizeIdeas.length === 0 && <p className="text-sm text-gray-400 mb-3">No suggestions yet.</p>}
                   <ul className="space-y-3 mb-3">
                     {prizeIdeas.map((s) => (
@@ -860,7 +860,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                               disabled={addPrizeMutation.isPending}
                               className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1 text-xs font-medium disabled:opacity-50"
                             >
-                              Choose
+                              Offer this prize
                             </button>
                           )}
                           {s.user_id === currentUser?.id && (
