@@ -533,6 +533,12 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
     }
   }
 
+  // Take a prize suggestion as your prize, after confirming.
+  const offerSuggestion = (s) => {
+    if (!window.confirm(`Offer "${s.text}" as your prize?`)) return
+    addPrizeMutation.mutate({ name: s.text, description: s.text, suggestion_id: s.id })
+  }
+
   const handleAddPrize = () => {
     if (!prizeForm.description) { showTooltipMsg("Please enter a prize description."); return }
     addPrizeMutation.mutate({ name: prizeForm.description, description: prizeForm.description })
@@ -873,7 +879,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                         </div>
                         {currentUser && !prizes.some((p) => p.user_id === currentUser.id) && (
                           <button
-                            onClick={() => addPrizeMutation.mutate({ name: s.text, description: s.text, suggestion_id: s.id })}
+                            onClick={() => offerSuggestion(s)}
                             disabled={addPrizeMutation.isPending}
                             className="ml-3 flex-shrink-0 bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1 text-xs font-medium disabled:opacity-50"
                           >
@@ -1048,7 +1054,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
                     <ClampedSuggestion key={s.id} text={s.text} />
                     <button
                       type="button"
-                      onClick={() => addPrizeMutation.mutate({ name: s.text, description: s.text, suggestion_id: s.id })}
+                      onClick={() => offerSuggestion(s)}
                       disabled={addPrizeMutation.isPending}
                       className="mt-2 w-full bg-yellow-600 hover:bg-yellow-700 text-white rounded px-3 py-1.5 text-sm font-medium disabled:opacity-50"
                     >
