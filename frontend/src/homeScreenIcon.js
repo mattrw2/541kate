@@ -1,8 +1,10 @@
 import { useEffect } from "react"
+import smartcrop from "smartcrop"
 import { apiUrl } from "./api"
 
 // While a challenge page is open, make "Add to Home Screen" use the challenge:
-// its cover photo (square-cropped) as the icon and its name as the label.
+// its cover photo (cropped to a square around the subject) as the icon and its
+// name as the label.
 // Phones read these from the page when the icon is added, so we swap them in
 // on mount and restore the site defaults on unmount.
 
@@ -26,14 +28,26 @@ const getMeta = (name) => {
   return el
 }
 
-// Center-crop the image to a size×size PNG data URL.
-const squareIcon = (img, size) => {
+// Pick the square region of the photo to use. smartcrop favors skin tones and
+// detail, so it usually lands on people's faces rather than background; if it
+// fails, fall back to the center square.
+const pickSquare = async (img) => {
+  const side = Math.min(img.naturalWidth, img.naturalHeight)
+  const center = { x: (img.naturalWidth - side) / 2, y: (img.naturalHeight - side) / 2, width: side, height: side }
+  try {
+    // minScale < 1 lets it zoom in on a subject instead of taking the largest square.
+    const { topCrop } = await smartcrop.crop(img, { width: 180, height: 180, minScale: 0.5 })
+    return topCrop || center
+  } catch {
+    return center
+  }
+}
+
+// Draw the chosen square region as a size×size PNG data URL.
+const squareIcon = (img, crop, size) => {
   const canvas = document.createElement("canvas")
   canvas.width = canvas.height = size
-  const side = Math.min(img.naturalWidth, img.naturalHeight)
-  const sx = (img.naturalWidth - side) / 2
-  const sy = (img.naturalHeight - side) / 2
-  canvas.getContext("2d").drawImage(img, sx, sy, side, side, 0, 0, size, size)
+  canvas.getContext("2d").drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, size, size)
   return canvas.toDataURL("image/png")
 }
 
@@ -58,10 +72,11 @@ export const useHomeScreenIcon = (challenge) => {
       // The photo is served by the backend (another origin); it sends CORS
       // headers, which lets us read it back out of the canvas.
       img.crossOrigin = "anonymous"
-      img.onload = () => {
+      img.onload = async () => {
+        const crop = await pickSquare(img)
         if (cancelled) return
         try {
-          icon.href = squareIcon(img, 180)
+          icon.href = squareIcon(img, crop, 180)
           // Android reads the web app manifest instead.
           const manifest = {
             name,
@@ -70,7 +85,7 @@ export const useHomeScreenIcon = (challenge) => {
             display: "browser",
             theme_color: "#ca8a04",
             background_color: "#ffffff",
-            icons: [192, 512].map((size) => ({ src: squareIcon(img, size), sizes: `${size}x${size}`, type: "image/png" })),
+            icons: [192, 512].map((size) => ({ src: squareIcon(img, crop, size), sizes: `${size}x${size}`, type: "image/png" })),
           }
           manifestUrl = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" }))
           getLink("manifest").href = manifestUrl
