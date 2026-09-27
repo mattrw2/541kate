@@ -17,6 +17,7 @@ import { useCurrentUser, tenantInviteUrl } from "../UserContext"
 import { useCopyButton } from "../useCopyButton"
 import { unitOf, roundAmount, formatAmount } from "../units"
 import { compressImage } from "../compressImage"
+import { useHomeScreenIcon } from "../homeScreenIcon"
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, ChartDataLabels)
 
@@ -309,6 +310,7 @@ const ChallengeDashboard = () => {
   })
   const challenge = challengeQuery.data
   const unit = unitOf(challenge)
+  useHomeScreenIcon(challenge)
 
   const inviteUrl = tenantInviteUrl(tenant, id) || window.location.href
 
