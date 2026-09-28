@@ -378,7 +378,6 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
   const [manageForm, setManageForm] = useState({ name: "", description: "", goal_minutes: 600, start_date: "", end_date: "" })
   const [managePhoto, setManagePhoto] = useState(null)
   const [manageFocus, setManageFocus] = useState(null)
-  const [manageSaveSuccess, setManageSaveSuccess] = useState(false)
 
   useEffect(() => {
     if (prizesLoaded && currentUser && prizes.some((p) => p.user_id === currentUser.id)) {
@@ -512,8 +511,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
       }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["challenge", id] })
-      setManageSaveSuccess(true)
-      setTimeout(() => setManageSaveSuccess(false), 3000)
+      setShowManage(false)
     },
   })
 
@@ -961,7 +959,6 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
             </div>
 
             <section className="mb-6">
-              {manageSaveSuccess && <div className="text-green-600 text-sm mb-2">Saved!</div>}
               <form
                 onSubmit={async (e) => {
                   e.preventDefault()
@@ -982,31 +979,64 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
               >
                 <div>
                   <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Name</label>
-                  <input type="text" value={manageForm.name} onChange={(e) => setManageForm((f) => ({ ...f, name: e.target.value }))} className="text-base border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400" />
+                  <input
+                    type="text"
+                    value={manageForm.name}
+                    onChange={(e) => setManageForm((f) => ({ ...f, name: e.target.value }))}
+                    className="text-base border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400"
+                    required
+                  />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Description</label>
-                  <textarea value={manageForm.description} onChange={(e) => setManageForm((f) => ({ ...f, description: e.target.value }))} className="text-base border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400" rows={2} />
+                  <textarea
+                    value={manageForm.description}
+                    onChange={(e) => setManageForm((f) => ({ ...f, description: e.target.value }))}
+                    className="text-base border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400"
+                    rows={2}
+                    required
+                  />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Goal ({unit.label.toLowerCase()})</label>
-                  <input type="number" value={manageForm.goal_minutes} onChange={(e) => setManageForm((f) => ({ ...f, goal_minutes: parseFloat(e.target.value) || 0 }))} className="text-base border border-gray-200 rounded px-2 py-1.5 w-32 focus:outline-none focus:border-yellow-400" min="0" step={unit.step} />
+                  <input
+                    type="number"
+                    value={manageForm.goal_minutes}
+                    onChange={(e) => setManageForm((f) => ({ ...f, goal_minutes: parseFloat(e.target.value) || 0 }))}
+                    className="text-base border border-gray-200 rounded px-2 py-1.5 w-32 focus:outline-none focus:border-yellow-400"
+                    min="0"
+                    step={unit.step}
+                    required
+                  />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Start date</label>
-                  <input type="date" value={manageForm.start_date} onChange={(e) => setManageForm((f) => ({ ...f, start_date: e.target.value }))} className="text-base border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400" />
+                  <input
+                    type="date"
+                    value={manageForm.start_date}
+                    onChange={(e) => setManageForm((f) => ({ ...f, start_date: e.target.value }))}
+                    className="text-base border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400"
+                    required
+                  />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">End date</label>
-                  <input type="date" value={manageForm.end_date} onChange={(e) => setManageForm((f) => ({ ...f, end_date: e.target.value }))} className="text-base border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400" />
+                  <input
+                    type="date"
+                    value={manageForm.end_date}
+                    onChange={(e) => setManageForm((f) => ({ ...f, end_date: e.target.value }))}
+                    className="text-base border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400"
+                    required
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Photo (optional)</label>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">Photo</label>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={(e) => { setManagePhoto(e.target.files[0] || null); setManageFocus(null) }}
-                    className="text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:border file:border-gray-200 file:rounded file:text-xs file:file:text-gray-600 file:bg-white hover:file:bg-gray-50"
+                    className="text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:border file:border-gray-200 file:rounded file:text-xs file:text-gray-600 file:bg-white hover:file:bg-gray-50"
+                    required={!challenge?.photo_path}
                   />
                   <PhotoFocusPicker
                     file={managePhoto}

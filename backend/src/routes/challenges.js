@@ -59,6 +59,9 @@ router.post("/", requireUser, upload.single("photo"), async (req, res) => {
   if (!name) {
     return res.status(400).send("Name is required.");
   }
+  if (!description) {
+    return res.status(400).send("Description is required.");
+  }
   if (!UNITS.includes(unit)) {
     return res.status(400).send(`unit must be one of: ${UNITS.join(", ")}.`);
   }
@@ -66,7 +69,16 @@ router.post("/", requireUser, upload.single("photo"), async (req, res) => {
   if (!(parseFloat(goal_minutes) > 0)) {
     return res.status(400).send("A goal greater than 0 is required.");
   }
-  const photo_path = req.file ? `/${req.file.filename}` : null;
+  if (!start_date) {
+    return res.status(400).send("Start date is required.");
+  }
+  if (!end_date) {
+    return res.status(400).send("End date is required.");
+  }
+  if (!req.file) {
+    return res.status(400).send("Photo is required.");
+  }
+  const photo_path = `/${req.file.filename}`;
   try {
     const focus = photo_path ? parseFocus(req.body) : null;
     const challenge = await db.createChallenge(req.tenantId, name, description, goal_minutes, start_date, end_date, req.userId, photo_path, unit, focus);

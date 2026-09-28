@@ -18,8 +18,7 @@ const CreateChallenge = () => {
     goal_minutes: "",
     unit: "minutes",
     start_date: "",
-    end_date: "",
-    prize: ""
+    end_date: ""
   })
   const [photo, setPhoto] = useState(null)
   const [photoFocus, setPhotoFocus] = useState(null)
@@ -42,10 +41,6 @@ const CreateChallenge = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.name) {
-      setError("Name is required.")
-      return
-    }
     setError(null)
     const formData = new FormData()
     formData.append("name", form.name)
@@ -54,7 +49,6 @@ const CreateChallenge = () => {
     formData.append("unit", form.unit)
     formData.append("start_date", form.start_date || "")
     formData.append("end_date", form.end_date || "")
-    formData.append("prize", form.prize || "")
     if (photo) formData.append("photo", await compressImage(photo))
     if (photo && photoFocus) {
       formData.append("photo_focus_x", photoFocus.x)
@@ -143,6 +137,7 @@ const CreateChallenge = () => {
             }
             className="text-base border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400"
             rows={3}
+            required
           />
         </div>
 
@@ -183,19 +178,6 @@ const CreateChallenge = () => {
 
         <div>
           <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
-            Prize you're offering
-          </label>
-          <input
-            type="text"
-            value={form.prize}
-            onChange={(e) => setForm((f) => ({ ...f, prize: e.target.value }))}
-            placeholder="e.g. will shave my head"
-            className="text-base border border-gray-200 rounded px-2 py-1.5 w-full focus:outline-none focus:border-yellow-400"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
             Start date
           </label>
           <input
@@ -205,6 +187,7 @@ const CreateChallenge = () => {
               setForm((f) => ({ ...f, start_date: e.target.value }))
             }
             className={`text-base border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400 ${form.start_date ? "text-gray-700" : "text-gray-400"}`}
+            required
           />
         </div>
         <div>
@@ -218,18 +201,20 @@ const CreateChallenge = () => {
               setForm((f) => ({ ...f, end_date: e.target.value }))
             }
             className={`text-base border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-yellow-400 ${form.end_date ? "text-gray-700" : "text-gray-400"}`}
+            required
           />
         </div>
 
         <div>
           <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
-            Photo (optional)
+            Photo
           </label>
           <input
             type="file"
             accept="image/*"
             onChange={(e) => { setPhoto(e.target.files[0] || null); setPhotoFocus(null) }}
             className="text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:border file:border-gray-200 file:rounded file:text-xs file:text-gray-600 file:bg-white hover:file:bg-gray-50"
+            required
           />
           <PhotoFocusPicker file={photo} focus={photoFocus} onChange={setPhotoFocus} />
         </div>

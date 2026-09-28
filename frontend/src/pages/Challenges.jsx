@@ -34,27 +34,39 @@ const Challenges = () => {
 
   const renderChallenge = (challenge) => (
     <li key={challenge.id} className={`border border-gray-200 rounded-lg p-4 ${isPast(challenge) ? "opacity-75" : ""}`}>
-      <div className="flex justify-between items-start">
-        <Link
-          to={`/challenge/${challenge.id}`}
-          className="text-lg font-semibold text-yellow-700 hover:underline"
-        >
-          {challenge.name}
-        </Link>
-      </div>
-      {challenge.description && (
-        <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{challenge.description}</p>
-      )}
-      <div className="mt-2 text-xs text-gray-700 flex gap-4 flex-wrap">
-        {(challenge.start_date || challenge.end_date) && (
-          <span>
-            {formatDate(challenge.start_date)}
-            {challenge.start_date && challenge.end_date ? " – " : ""}
-            {formatDate(challenge.end_date)}
-          </span>
+      <div className="flex gap-3">
+        {challenge.photo_path && (
+          <img
+            src={`${apiUrl}${challenge.photo_path}`}
+            alt=""
+            className="w-16 h-16 rounded-md object-cover flex-shrink-0"
+            style={challenge.photo_focus_x != null ? { objectPosition: `${challenge.photo_focus_x * 100}% ${challenge.photo_focus_y * 100}%` } : undefined}
+          />
         )}
-        <span>Goal: {formatAmount(challenge.goal_minutes, unitOf(challenge))}</span>
-        {challenge.admin_username && <span>by {challenge.admin_username}</span>}
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start">
+            <Link
+              to={`/challenge/${challenge.id}`}
+              className="text-lg font-semibold text-yellow-700 hover:underline"
+            >
+              {challenge.name}
+            </Link>
+          </div>
+          {challenge.description && (
+            <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{challenge.description}</p>
+          )}
+          <div className="mt-2 text-xs text-gray-700 flex gap-4 flex-wrap">
+            {(challenge.start_date || challenge.end_date) && (
+              <span>
+                {formatDate(challenge.start_date)}
+                {challenge.start_date && challenge.end_date ? " – " : ""}
+                {formatDate(challenge.end_date)}
+              </span>
+            )}
+            <span>Goal: {formatAmount(challenge.goal_minutes, unitOf(challenge))}</span>
+            {challenge.admin_username && <span>by {challenge.admin_username}</span>}
+          </div>
+        </div>
       </div>
     </li>
   )
