@@ -233,7 +233,7 @@ const getPrizeSuggestions = async (challenge_id) => {
     `SELECT s.*, u.username FROM prize_suggestions s
     LEFT JOIN users u ON s.user_id = u.id
     WHERE s.challenge_id = ?
-    ORDER BY s.created_at ASC`,
+    ORDER BY s.created_at DESC`,
     [challenge_id]
   );
 };
