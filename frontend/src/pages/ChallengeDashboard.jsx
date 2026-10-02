@@ -264,7 +264,10 @@ const ActivityItem = ({ activity, unit, onIncrementSus, onDecrementSus, onDelete
                   type="text"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleAddComment() }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAddComment()
+                    else if (e.key === "Escape") { setCommentText(""); setShowComments(false); e.currentTarget.blur() }
+                  }}
                   placeholder="Add a comment..."
                   className="text-base border rounded px-2 py-1 flex-1"
                 />
