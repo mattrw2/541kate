@@ -3,8 +3,10 @@ import { Link } from "react-router-dom"
 import { apiUrl, apiFetch } from "../api"
 import { useCurrentUser } from "../UserContext"
 import { unitOf, formatAmount } from "../units"
+import { usePageTitle } from "../usePageTitle"
 
 const Challenges = () => {
+  usePageTitle("Challenges")
   const { currentUser } = useCurrentUser()
   const { data: challenges = [], isPending } = useQuery({
     queryKey: ["challenges"],

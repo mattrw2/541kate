@@ -7,8 +7,10 @@ import { UNITS } from "../units"
 import { compressImage } from "../compressImage"
 import { PhotoFocusPicker } from "../PhotoFocusPicker"
 import { useCopyButton } from "../useCopyButton"
+import { usePageTitle } from "../usePageTitle"
 
 const CreateChallenge = () => {
+  usePageTitle("New Challenge")
   const { currentUser, tenant } = useCurrentUser()
   const navigate = useNavigate()
 

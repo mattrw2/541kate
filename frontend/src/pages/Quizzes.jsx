@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from "react";
+import { usePageTitle } from "../usePageTitle";
 
 const quizData = [
   {
@@ -33,6 +34,7 @@ const quizData = [
 ];
 
 const Quizzes = () => {
+  usePageTitle("Quizzes");
   const [allImagesLoaded, setAllImagesLoaded] = useState(false);
   const [imagesLoaded, setImagesLoaded] = useState(0);
 

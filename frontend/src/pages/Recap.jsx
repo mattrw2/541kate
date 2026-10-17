@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { PauseIcon, PlayIcon } from "@heroicons/react/24/solid"
 import { apiUrl, apiFetch } from "../api"
+import { usePageTitle } from "../usePageTitle"
 
 const SLIDE_DURATION_MS = 5000
 
@@ -31,6 +32,7 @@ const Recap = () => {
     queryKey: ["challenge", id],
     queryFn: () => apiFetch(`${apiUrl}/challenges/${id}`).then((r) => r.json())
   })
+  usePageTitle(challenge ? `${challenge.name} Recap` : "Recap")
 
   const { data: activities = [] } = useQuery({
     queryKey: ["challenge", id, "activities"],

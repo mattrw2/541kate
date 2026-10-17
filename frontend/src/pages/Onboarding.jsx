@@ -6,6 +6,7 @@ import { JoinTenantForm } from "./JoinTenant"
 import kateFace from "../kate-face.jpg"
 import { useCopyButton } from "../useCopyButton"
 import { VisibilityChoice } from "../VisibilityChoice"
+import { usePageTitle } from "../usePageTitle"
 
 // Shown right after starting a group: the generated shared password, which they
 // can change to something memorable before continuing.
@@ -73,6 +74,7 @@ const SavePassword = ({ created, onDone }) => {
 // Shown when this device has no tenant key yet. Either join an existing group with
 // its shared password, or start a new one (as a brand-new user).
 const Onboarding = () => {
+  usePageTitle("Welcome")
   const { enterTenant } = useCurrentUser()
   const navigate = useNavigate()
   const [mode, setMode] = useState("join")
@@ -147,7 +149,7 @@ const Onboarding = () => {
           <>
             <div className="flex gap-2 mb-5">
               <button className={tabClass(mode === "join")} onClick={() => { setMode("join"); setError("") }}>
-                Join a group
+                Open a group
               </button>
               <button className={tabClass(mode === "create")} onClick={() => { setMode("create"); setError("") }}>
                 Start a group

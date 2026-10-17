@@ -1,4 +1,5 @@
 import React from "react";
+import { usePageTitle } from "../usePageTitle";
 
 const videos = [
   "https://www.youtube.com/embed/mKKIpWlvRZs",
@@ -11,6 +12,7 @@ const videos = [
 ];
 
 const France = () => {
+  usePageTitle("My France Trip");
   return (
     <div className="flex flex-col gap-2">
       {videos.map((video) => (

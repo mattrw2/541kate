@@ -1,6 +1,8 @@
 import React from "react";
+import { usePageTitle } from "../usePageTitle";
 
 const RentABackpacker = () => {
+  usePageTitle("Rent a Backpacker");
   return (
     <div>
       <p className="px-2">
