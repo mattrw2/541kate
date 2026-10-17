@@ -360,6 +360,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
   const [activitySearch, setActivitySearch] = useState("")
   const [chartTodayOnly, setChartTodayOnly] = useState(false)
   const [formData, setFormData] = useState({ duration: "", date: today, memo: "", photo: null })
+  const [locatingActivity, setLocatingActivity] = useState(false)
   const [tooltip, setTooltip] = useState(null)
   const [showPrizeForm, setShowPrizeForm] = useState(false)
   const [suggestionIndex, setSuggestionIndex] = useState(0) // which suggestion the Add Prize modal shows
@@ -524,6 +525,7 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
     if (!(parseFloat(duration) > 0)) { showTooltipMsg(`Please enter a valid number of ${unit.label.toLowerCase()}.`); return }
 
     const submit = async (lat, lng) => {
+      setLocatingActivity(false)
       const fd = new FormData()
       fd.append("data", JSON.stringify({ duration, date, memo, challenge_id: id, lat, lng }))
       if (photo) fd.append("photo", await compressImage(photo))
@@ -531,9 +533,11 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
     }
 
     if (navigator.geolocation) {
+      setLocatingActivity(true)
       navigator.geolocation.getCurrentPosition(
         (pos) => submit(pos.coords.latitude, pos.coords.longitude),
-        () => submit(null, null)
+        () => submit(null, null),
+        { timeout: 5000 }
       )
     } else {
       submit(null, null)
@@ -1236,8 +1240,8 @@ const { data: activities = [], isRefetching: activitiesFetching } = useQuery({
               </div>
 
               <div className="flex justify-end gap-2 pt-1">
-                <button type="button" onClick={handleSave} disabled={saveActivity.isPending} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-4 py-1.5 text-sm disabled:opacity-50">
-                  {saveActivity.isPending ? "Saving..." : "Save"}
+                <button type="button" onClick={handleSave} disabled={locatingActivity || saveActivity.isPending} className="bg-yellow-600 hover:bg-yellow-700 text-white rounded px-4 py-1.5 text-sm disabled:opacity-50">
+                  {locatingActivity || saveActivity.isPending ? "Saving..." : "Save"}
                 </button>
                 <button type="button" onClick={() => setShowForm(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
               </div>
