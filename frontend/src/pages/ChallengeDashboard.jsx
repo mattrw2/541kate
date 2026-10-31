@@ -258,7 +258,7 @@ const ActivityItem = ({ activity, unit, onIncrementSus, onDecrementSus, onDelete
                 <span className="ml-1">{c.text}</span>
               </div>
             ))}
-            {currentUser && !isComplete && (
+            {currentUser && (
               <div className="flex gap-2 mt-1">
                 <input
                   ref={commentInputRef}
@@ -284,7 +284,7 @@ const ActivityItem = ({ activity, unit, onIncrementSus, onDecrementSus, onDelete
           </div>
         </div>
       )}
-      {currentUser && !isComplete && comments.length === 0 && !showComments && (
+      {currentUser && comments.length === 0 && !showComments && (
         <button onClick={() => { setShowComments(true); setTimeout(() => commentInputRef.current?.focus(), 0) }} className="px-3 pb-2 flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600 transition-colors">
           <ChatBubbleLeftIcon className="w-3.5 h-3.5" />
           comment
